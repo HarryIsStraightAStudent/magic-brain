@@ -70,8 +70,8 @@
 </head>
 <body class="bg-gradient-to-br from-white via-[#faf9f3] to-[#f0fdf4] text-on-surface min-h-screen flex flex-col relative overflow-x-hidden">
 
-<!-- 3D 地球画布 (居中铺满背景, 卡片浮其上) -->
-<div id="globe-wrap" class="fixed inset-0 z-0 pointer-events-auto">
+<!-- 3D 地球画布 (左侧, 不超屏, 可拖拽缩放) -->
+<div id="globe-wrap" class="fixed z-0 pointer-events-auto" style="left:-8%;top:50%;transform:translateY(-50%);width:78vw;height:78vw;max-width:1100px;max-height:1100px">
   <canvas id="globe-canvas" class="w-full h-full"></canvas>
 </div>
 
@@ -86,11 +86,10 @@
 </nav>
 
 <!-- ============ 主视图: 首页 ============ -->
-<div id="view-home" class="view active flex-grow pt-24 pb-10 px-4 md:px-10 flex items-center min-h-screen relative z-10">
-  <div class="w-full max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
-    <div class="md:col-span-6 lg:col-span-5 flex flex-col justify-center relative">
-      <div class="absolute -inset-4 bg-white/30 blur-3xl rounded-[2.5rem] z-0"></div>
-      <div class="glass-card rounded-[24px] relative z-10 flex flex-col overflow-hidden h-[620px]">
+<div id="view-home" class="view active relative z-10">
+  <div id="home-search-box" class="fixed top-20 left-4 md:left-10 z-20 w-[calc(100%-2rem)] md:w-[400px]">
+      <div class="absolute -inset-4 bg-white/30 blur-3xl rounded-[2.5rem] z-0 pointer-events-none"></div>
+      <div class="glass-card rounded-[24px] relative z-10 flex flex-col overflow-hidden" style="max-height:calc(100vh - 120px)">
         <!-- Tab 切换 -->
         <div class="flex items-center p-2 gap-2 border-b border-white/60 bg-white/30 shrink-0">
           <button id="tab-search" class="tab-btn active flex-1 py-2.5 px-4 text-center rounded-xl font-semibold text-sm" onclick="switchTab('search')">✈️ 魔法搜索</button>
@@ -157,22 +156,21 @@
         <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🌱 多模态套利</span>
         <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🚄 空铁联运</span>
       </div>
-    </div>
   </div>
 </div>
 
 <!-- ============ 视图: 路线详情 ============ -->
-<div id="view-detail" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10">
+<div id="view-detail" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10 min-h-screen" style="background:rgba(250,249,243,0.92)">
   <div class="w-full max-w-3xl mx-auto" id="detail-content"></div>
 </div>
 
 <!-- ============ 视图: 省钱案例 ============ -->
-<div id="view-cases" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10">
+<div id="view-cases" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10 min-h-screen" style="background:rgba(250,249,243,0.92)">
   <div class="w-full max-w-4xl mx-auto" id="cases-content"></div>
 </div>
 
 <!-- ============ 视图: 关于 ============ -->
-<div id="view-about" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10">
+<div id="view-about" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10 min-h-screen" style="background:rgba(250,249,243,0.92)">
   <div class="w-full max-w-2xl mx-auto glass-card rounded-[24px] p-8 md:p-10">
     <h1 class="text-3xl font-extrabold mb-3 text-[#006e2f]">关于魔法大脑</h1>
     <p class="text-on-surface-variant mb-6 leading-relaxed">一个把"人肉摸索省钱路线"能力做成自动化 AI 搜索引擎的产品。参赛 GOAI Global Open-source AI Challenge · Track 02 Boundless Agents。</p>
@@ -235,6 +233,9 @@ function buildWaypoints(data, pathIdx) {
 function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
+  // 搜索框仅首页显示 (fixed 定位不受父 display 影响, 需手动控制)
+  const homeBox = document.getElementById('home-search-box');
+  if (homeBox) homeBox.style.display = (name === 'home') ? '' : 'none';
   window.scrollTo(0, 0);
 }
 
@@ -617,36 +618,46 @@ function focusOn(wp) {
   focusing = true;
 }
 
-// === 交互: 拖拽旋转 ===
+// === 交互: 拖拽旋转 + 滚轮缩放 ===
 let isDragging = false, prevX = 0, prevY = 0, autoRotate = true;
 let velX = 0, velY = 0;
-canvas.addEventListener('pointerdown', (e) => { isDragging = true; focusing = false; autoRotate = false; prevX = e.clientX; prevY = e.clientY; canvas.setPointerCapture(e.pointerId); });
+// 缩放: 用 camera.position.z
+const MIN_Z = 1.6, MAX_Z = 5.0;
+canvas.addEventListener('pointerdown', (e) => { isDragging = true; focusing = false; autoRotate = false; velX = 0; velY = 0; prevX = e.clientX; prevY = e.clientY; canvas.setPointerCapture(e.pointerId); });
 canvas.addEventListener('pointermove', (e) => {
   if (!isDragging) return;
   velY = (e.clientX - prevX) * 0.005;
   velX = (e.clientY - prevY) * 0.005;
-  earthGroup.rotation.y += velY;
-  earthGroup.rotation.x += velX;
-  earthGroup.rotation.x = Math.max(-1.2, Math.min(1.2, earthGroup.rotation.x));
+  earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0), velY);
+  earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0), velX);
   prevX = e.clientX; prevY = e.clientY;
 });
 canvas.addEventListener('pointerup', (e) => { isDragging = false; canvas.releasePointerCapture(e.pointerId); });
 canvas.addEventListener('pointerleave', () => { isDragging = false; });
+// 滚轮缩放
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  camera.position.z += e.deltaY * 0.002;
+  camera.position.z = Math.max(MIN_Z, Math.min(MAX_Z, camera.position.z));
+}, { passive: false });
 
 function animate() {
   requestAnimationFrame(animate);
   if (focusing && targetQuat) {
     // 四元数球面线性插值平滑聚焦
     earthGroup.quaternion.slerp(targetQuat, 0.08);
-    if (earthGroup.quaternion.angleTo(targetQuat) < 0.01) focusing = false;
+    if (earthGroup.quaternion.angleTo(targetQuat) < 0.005) { focusing = false; velX = 0; velY = 0; }
   } else if (autoRotate) {
-    earthGroup.rotation.y += 0.0008;
-  } else {
-    earthGroup.rotation.y += velY; earthGroup.rotation.x += velX;
-    velY *= 0.95; velX *= 0.95;
-    earthGroup.rotation.x = Math.max(-1.2, Math.min(1.2, earthGroup.rotation.x));
+    earthGroup.rotation.y += 0.0006;
+  } else if (!isDragging) {
+    // 惯性, 慢慢停下, 不自转
+    if (Math.abs(velX) > 0.0001 || Math.abs(velY) > 0.0001) {
+      earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0), velY);
+      earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0), velX);
+      velY *= 0.94; velX *= 0.94;
+    }
   }
-  clouds.rotation.y += 0.0003;
+  clouds.rotation.y += 0.0002;
   renderer.render(scene, camera);
 }
 animate();

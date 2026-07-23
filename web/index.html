@@ -514,7 +514,7 @@ function renderResults(data){
       const t=b.type==='flight_direct'?'✈️ 飞机直达':'🚄 高铁直达';
       h+=`<div class="route" onclick="selectBaseline(${i})">
         <div class="route-top">
-          <div><div class="route-name">${t}</div><div class="route-price" style="color:var(--text-dim)">${b.transfers===0?'直达':''} ¥${Math.round(b.price)}</div></div>
+          <div><div class="route-name">${t} ${b.transfers===0?'<span style="font-size:11px;color:var(--text-faint)">直达</span>':''}</div><div class="route-price" style="color:var(--text-faint);text-decoration:line-through;text-decoration-color:var(--danger);font-size:18px">¥${Math.round(b.price)}</div></div>
           <div class="route-meta"><span class="dur">${durTxt(b.duration_min)}</span>${b.transfers}次换乘</div>
         </div>
         <div class="route-hint">查看飞行路线 →</div>

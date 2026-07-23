@@ -65,6 +65,8 @@ class BaselineOut(BaseModel):
     price: float
     duration_min: int
     transfers: int
+    origin_code: str
+    dest_code: str
 
 
 class SavingsOut(BaseModel):
@@ -349,6 +351,8 @@ def api_search(
         price=b["total_price"],
         duration_min=b["total_duration_min"],
         transfers=b.get("transfers", 0),
+        origin_code=origin,
+        dest_code=destination,
     ) for b in matched_baselines]
 
     savings_outs = []

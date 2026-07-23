@@ -468,33 +468,86 @@ async function doSearch(){
 
 function renderResults(data){
   const body=document.getElementById('results-body');
-  const best=data.savings.filter(s=>s.savings_price>0).sort((a,b)=>b.savings_price-a.savings_price)[0];
+  const weight=document.getElementById('weight').value;
   let h='';
-  if(best){
-    const fast=best.time_cost_min<0?' · 还更快':'';
-    h+=`<div class="save-hero"><div class="lbl">🎉 你能省</div><div class="amt">¥${Math.round(best.savings_price)}</div><div class="ratio">${Math.round(best.savings_ratio*100)}% ↓${fast}</div><div class="vs">比 ${best.benchmark_name}</div></div>`;
+  // 横幅: 省钱优先->省钱额; 时间优先->省时; 均衡->省钱
+  const cheapest=data.paths.length?data.paths.reduce((a,b)=>a.total_price<b.total_price?a:b):null;
+  const fastest=data.paths.length?data.paths.reduce((a,b)=>a.total_duration_min<b.total_duration_min?a:b):null;
+  if(weight==='time'){
+    // 时间优先: 与最慢基准比省了多少时间
+    const slowBase=data.baselines.length?data.baselines.reduce((a,b)=>a.duration_min>b.duration_min?a:b):null;
+    if(fastest&&slowBase&&fastest.total_duration_min<slowBase.duration_min){
+      const saveMin=slowBase.duration_min-fastest.total_duration_min;
+      const hh=Math.floor(saveMin/60), mm=saveMin%60;
+      const saveT=(hh?hh+'小时':'')+(mm?mm+'分':'');
+      h+=`<div class="save-hero"><div class="lbl">⚡ 你能省时间</div><div class="amt" style="font-size:32px">${saveT}</div><div class="ratio">比 ${slowBase.name} 快</div><div class="vs">${fastest.segments[0].label.split(' ')[0]} 方案</div></div>`;
+    }
+  } else {
+    const best=data.savings.filter(s=>s.savings_price>0).sort((a,b)=>b.savings_price-a.savings_price)[0];
+    if(best){
+      const fast=best.time_cost_min<0?' · 还更快':'';
+      h+=`<div class="save-hero"><div class="lbl">🎉 你能省</div><div class="amt">¥${Math.round(best.savings_price)}</div><div class="ratio">${Math.round(best.savings_ratio*100)}% ↓${fast}</div><div class="vs">比 ${best.benchmark_name}</div></div>`;
+    }
   }
+  // 中转省钱方案 (可点)
+  h+='<div class="base-title" style="margin-top:4px">中转省钱方案</div>';
   data.paths.forEach((p,i)=>{
-    const rec=i===0&&p.total_price===Math.min(...data.paths.map(x=>x.total_price));
+    const isCheap=i===0&&p.total_price===Math.min(...data.paths.map(x=>x.total_price));
+    const isFast=p===fastest;
     const name=p.segments.map(s=>s.label.split(' ')[0]).join(' → ');
-    h+=`<div class="route ${rec?'rec':''}" onclick="openDetail(${i})">
+    let pills=`<span class="pill pill-cyan">${p.duration_text}</span>`;
+    if(weight==='time'&&isFast) pills='<span class="pill pill-green">最快</span>'+pills;
+    if(weight!=='time'&&isCheap) pills='<span class="pill pill-green">最省</span>'+pills;
+    h+=`<div class="route ${(weight==='time'?isFast:isCheap)?'rec':''}" onclick="openDetail(${i})">
       <div class="route-top">
-        <div><div class="route-name">${rec?'⭐ ':''}${name}</div><div class="route-price">¥${Math.round(p.total_price)}</div></div>
+        <div><div class="route-name">${(weight==='time'?isFast:isCheap)?'⭐ ':''}${name}</div><div class="route-price">¥${Math.round(p.total_price)}</div></div>
         <div class="route-meta"><span class="dur">${p.duration_text}</span>${p.transfers}次换乘</div>
       </div>
-      ${rec?'<span class="pill pill-green">推荐</span>':''}<span class="pill pill-cyan">${p.duration_text}</span>
+      ${pills}
       <div class="route-hint">查看路线详情 →</div>
     </div>`;
   });
+  // 直达基准 (也可点, 画对应路线)
   if(data.baselines.length){
-    h+='<div class="base-list"><div class="base-title">直达基准</div>';
-    data.baselines.forEach(b=>{
+    h+='<div class="base-list"><div class="base-title">直达方案</div>';
+    data.baselines.forEach((b,i)=>{
       const t=b.type==='flight_direct'?'✈️ 飞机直达':'🚄 高铁直达';
-      h+=`<div class="base-row"><span>${t}</span><span class="base-price">¥${Math.round(b.price)}</span></div>`;
+      h+=`<div class="route" onclick="selectBaseline(${i})">
+        <div class="route-top">
+          <div><div class="route-name">${t}</div><div class="route-price" style="color:var(--text-dim)">${b.transfers===0?'直达':''} ¥${Math.round(b.price)}</div></div>
+          <div class="route-meta"><span class="dur">${durTxt(b.duration_min)}</span>${b.transfers}次换乘</div>
+        </div>
+        <div class="route-hint">查看飞行路线 →</div>
+      </div>`;
     });
     h+='</div>';
   }
   body.innerHTML=h;
+}
+
+// 选中直达基准: 画对应路线 (飞机抬高弧/高铁贴地弧) + 弹详情
+function selectBaseline(idx){
+  if(!lastData) return;
+  const b=lastData.baselines[idx];
+  const o=GEO.cities[b.origin_code], d=GEO.cities[b.dest_code];
+  if(o&&d&&window.__drawRoute){
+    const isFlight=b.type==='flight_direct';
+    window.__drawRoute([{...o,type:isFlight?'flight':'hsr'},{...d,type:isFlight?'flight':'hsr'}]);
+  }
+  // 详情弹窗
+  const oN=CITIES[b.origin_code]?.name||b.origin_code, dN=CITIES[b.dest_code]?.name||b.dest_code;
+  const t=b.type==='flight_direct'?'✈️ 飞机直达':'🚄 高铁直达';
+  document.getElementById('detail-inner').innerHTML=`
+    <button class="back-btn" onclick="showView('home')">← 返回</button>
+    <h1>${oN} → ${dN}</h1>
+    <p>${t} · ${durTxt(b.duration_min)} · 直达 · <b style="color:var(--accent)">¥${Math.round(b.price)}</b></p>
+    <div class="save-hero"><div class="lbl">${b.name}</div><div class="amt" style="font-size:28px">¥${Math.round(b.price)}</div><div class="ratio">${durTxt(b.duration_min)} · 0换乘</div></div>
+    <h2>📍 路线</h2>
+    <div class="timeline"><div class="tl-item"><div class="tl-rail"><div class="tl-dot"></div><div class="tl-line"></div></div>
+      <div class="tl-body"><div class="tl-title">${b.type==='flight_direct'?'✈️':'🚄'} ${oN} 出发</div><div class="tl-sub">${b.name}</div></div></div>
+    <div class="tl-item"><div class="tl-rail"><div class="tl-dot"></div></div>
+      <div class="tl-body"><div class="tl-title">${b.type==='flight_direct'?'✈️':'🚄'} 抵达 ${dN}</div><div class="tl-sub">直达, 无中转</div></div></div></div>`;
+  showView('detail');
 }
 
 function closeResults(){ document.getElementById('results-box').classList.remove('show'); }

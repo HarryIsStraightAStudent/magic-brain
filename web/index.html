@@ -309,6 +309,21 @@
   .spin { width: 22px; height: 22px; border: 2px solid var(--glass-border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 30px auto; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* 地名标签 */
+  .map-label {
+    position: absolute; left: 50%; top: 0; transform: translate(-50%, -135%);
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+    padding: 2px 7px; border-radius: 6px;
+    background: rgba(5,7,15,0.75); backdrop-filter: blur(6px);
+    border: 1px solid var(--glass-border); color: var(--text);
+    pointer-events: none; transition: opacity .2s;
+  }
+  .map-label.end { border-color: rgba(74,222,128,0.5); color: var(--save); }
+  .map-label.mid { display: none; }
+  .label-anchor { pointer-events: auto; width: 28px; height: 28px; transform: translate(-50%,-50%); border-radius: 50%; cursor: help; }
+  .label-anchor:hover .map-label.mid { display: block; }
+  .label-anchor:hover .map-label.end { background: rgba(5,7,15,0.9); }
+
   /* 提示文字 */
   .hint-bar {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 25;
@@ -336,6 +351,8 @@
   <span class="badge">GOAI · Track 02</span>
 </nav>
 
+<!-- 地名标签层 (投影在地球上) -->
+<div id="labels-layer" style="position:fixed;inset:0;z-index:5;pointer-events:none;"></div>
 <!-- 左上主浮窗 -->
 <div id="panel" class="glass">
   <div class="tab-bar">
@@ -601,6 +618,39 @@ function latLngToVec3(lat,lng,radius=R){
   const phi=(90-lat)*Math.PI/180, theta=(lng+180)*Math.PI/180;
   return new THREE.Vector3(-radius*Math.sin(phi)*Math.cos(theta), radius*Math.cos(phi), radius*Math.sin(phi)*Math.sin(theta));
 }
+let markers=[];
+const _projV=new THREE.Vector3();
+function renderLabels(){
+  const layer=document.getElementById('labels-layer');
+  // 清空重建
+  layer.innerHTML='';
+  if(!markers.length) return;
+  const rect=wrap.getBoundingClientRect();
+  markers.forEach(m=>{
+    // 该点世界坐标
+    _projV.copy(latLngToVec3(m.lat,m.lng,R+0.02)).applyMatrix4(earthGroup.matrixWorld);
+    // 判断是否在地球正面 (z>0 且不被地球遮挡): 简化用 z 分量
+    const camDir=new THREE.Vector3().subVectors(_projV,camera.position).normalize();
+    const surfNormal=_projV.clone().normalize();
+    const facing=surfNormal.dot(camDir); // <0 表示正面朝相机
+    if(facing>0.05) return; // 背面不显示
+    // 投影到屏幕
+    const ndc=_projV.clone().project(camera);
+    if(ndc.z>1) return;
+    const x=(ndc.x*0.5+0.5)*rect.width;
+    const y=(-ndc.y*0.5+0.5)*rect.height;
+    if(x<-50||x>rect.width+50||y<-50||y>rect.height+50) return;
+    const el=document.createElement('div');
+    el.className='label-anchor';
+    el.style.position='absolute';
+    el.style.left=x+'px'; el.style.top=y+'px';
+    const lbl=document.createElement('div');
+    lbl.className='map-label '+(m.type==='end'?'end':'mid');
+    lbl.textContent=m.name;
+    el.appendChild(lbl);
+    layer.appendChild(el);
+  });
+}
 function makeArc(a,b,segs=40,lift=0){
   const va=latLngToVec3(a.lat,a.lng,1).normalize(), vb=latLngToVec3(b.lat,b.lng,1).normalize();
   const ang=va.angleTo(vb), pts=[];
@@ -609,19 +659,27 @@ function makeArc(a,b,segs=40,lift=0){
   return pts;
 }
 let pathLayer=null;
-function clearRoute(){ if(pathLayer){earthGroup.remove(pathLayer); pathLayer.traverse(o=>{o.geometry?.dispose();o.material?.dispose();}); pathLayer=null;} }
+function clearRoute(){ if(pathLayer){earthGroup.remove(pathLayer); pathLayer.traverse(o=>{o.geometry?.dispose();o.material?.dispose();}); pathLayer=null;} markers=[]; renderLabels(); }
 function drawRoute(wps){
-  clearRoute(); pathLayer=new THREE.Group();
+  clearRoute(); pathLayer=new THREE.Group(); markers=[];
   for(let i=0;i<wps.length-1;i++){
-    const seg=wps[i].type==='flight'?makeArc(wps[i],wps[i+1],50,0.18):makeArc(wps[i],wps[i+1],40,0.0);
+    const isFlight=wps[i].type==='flight';
+    const seg=isFlight?makeArc(wps[i],wps[i+1],50,0.18):makeArc(wps[i],wps[i+1],40,0.0);
     const g=new THREE.BufferGeometry().setFromPoints(seg);
-    pathLayer.add(new THREE.Line(g, new THREE.LineBasicMaterial({color:wps[i].type==='flight'?0x38bdf8:0x4ade80, transparent:true, opacity:0.95})));
+    pathLayer.add(new THREE.Line(g, new THREE.LineBasicMaterial({color:isFlight?0x38bdf8:0x4ade80, transparent:true, opacity:0.95})));
   }
   wps.forEach((w,i)=>{
     const end=(i===0||i===wps.length-1);
+    const isFlightSeg = wps[i].type==='flight' || (i<wps.length-1 && wps[i+1].type==='flight');
     const dot=new THREE.Mesh(new THREE.SphereGeometry(end?0.02:0.012,16,16), new THREE.MeshBasicMaterial({color:end?0x4ade80:0x38bdf8}));
     dot.position.copy(latLngToVec3(w.lat,w.lng,R+0.015)); pathLayer.add(dot);
     if(end){ const ring=new THREE.Mesh(new THREE.RingGeometry(0.028,0.04,24), new THREE.MeshBasicMaterial({color:0x4ade80,transparent:true,opacity:0.6,side:THREE.DoubleSide})); ring.position.copy(latLngToVec3(w.lat,w.lng,R+0.015)); ring.lookAt(0,0,0); pathLayer.add(ring); }
+    // 收集标签: 起终点永远显示; 非飞机途径段的中途站悬停显示; 飞机段不标
+    if(end){
+      markers.push({name:w.name, lat:w.lat, lng:w.lng, type:'end'});
+    } else if(!isFlightSeg){
+      markers.push({name:w.name, lat:w.lat, lng:w.lng, type:'mid'});
+    }
   });
   earthGroup.add(pathLayer);
   // 聚焦整条路径的几何中心 (所有航点经纬度均值), 让首尾都在视野内
@@ -674,6 +732,7 @@ function animate(){
     velY*=0.94; velX*=0.94;
   }
   renderer.render(scene,camera);
+  renderLabels();
 }
 animate();
 window.__drawRoute=drawRoute;

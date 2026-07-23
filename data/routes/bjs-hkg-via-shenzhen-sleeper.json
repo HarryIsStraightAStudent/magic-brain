@@ -1,0 +1,45 @@
+{
+  "route_id": "bjs-hkg-via-shenzhen-sleeper",
+  "name": "北京→香港 卧铺经深圳过关",
+  "origin": {"city": "北京", "station": "北京西", "code": "BJS"},
+  "destination": {"city": "香港", "station": "尖沙咀", "code": "HKG"},
+  "tags": ["跨境", "卧铺省钱"],
+  "segments": [
+    {
+      "type": "train_sleeper",
+      "from": "北京西",
+      "to": "深圳",
+      "train_no": "D901",
+      "seat": "二等卧",
+      "depart": "20:25",
+      "arrive": "次日10:00",
+      "duration_min": 815,
+      "price": 560,
+      "comfort": "bed",
+      "note": "动卧, 待核实"
+    },
+    {
+      "type": "walk_border",
+      "from": "深圳站",
+      "to": "罗湖口岸",
+      "duration_min": 10,
+      "price": 0,
+      "comfort": "walk"
+    },
+    {
+      "type": "metro",
+      "from": "罗湖",
+      "to": "尖沙咀",
+      "duration_min": 50,
+      "price": 60,
+      "comfort": "seat"
+    }
+  ],
+  "total_price": 620,
+  "total_duration_min": 875,
+  "transfers": 2,
+  "departs_overnight": true,
+  "source": "seed_inferred (待核实)",
+  "verified": false,
+  "verified_date": null
+}

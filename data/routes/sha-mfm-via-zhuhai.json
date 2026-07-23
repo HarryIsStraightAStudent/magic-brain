@@ -1,0 +1,54 @@
+{
+  "route_id": "sha-mfm-via-zhuhai",
+  "name": "上海→澳门 飞珠海+拱北过关",
+  "origin": {"city": "上海", "station": "浦东机场", "code": "SHA"},
+  "destination": {"city": "澳门", "station": "外港", "code": "MFM"},
+  "tags": ["跨境", "省钱典范"],
+  "segments": [
+    {
+      "type": "flight",
+      "from": "上海浦东",
+      "to": "珠海金湾",
+      "flight_no": "待核实",
+      "seat": "经济舱",
+      "depart": "待核实",
+      "arrive": "待核实",
+      "duration_min": 150,
+      "price": 450,
+      "comfort": "seat",
+      "note": "飞珠海比飞澳门便宜, 待核实"
+    },
+    {
+      "type": "bus",
+      "from": "金湾机场",
+      "to": "拱北口岸",
+      "duration_min": 60,
+      "price": 30,
+      "comfort": "seat",
+      "note": "机场大巴, 待核实"
+    },
+    {
+      "type": "walk_border",
+      "from": "拱北口岸",
+      "to": "关闸",
+      "duration_min": 15,
+      "price": 0,
+      "comfort": "walk"
+    },
+    {
+      "type": "bus",
+      "from": "关闸",
+      "to": "外港",
+      "duration_min": 20,
+      "price": 6,
+      "comfort": "seat"
+    }
+  ],
+  "total_price": 486,
+  "total_duration_min": 245,
+  "transfers": 3,
+  "departs_overnight": false,
+  "source": "seed_inferred (待核实)",
+  "verified": false,
+  "verified_date": null
+}

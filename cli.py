@@ -23,10 +23,27 @@ from engine import load_graph, search, Weights
 from engine.arbitrage import compare_to_baseline
 
 
-# 城市名 -> 基准 code 的别名 (用户输入中文也行)
+# 城市名 -> code 的别名 (用户输入中文也行)
 CITY_ALIAS = {
     "上海": "SHA", "shanghai": "SHA",
     "香港": "HKG", "hongkong": "HKG", "hong kong": "HKG",
+    "北京": "BJS", "beijing": "BJS",
+    "广州": "CAN", "guangzhou": "CAN",
+    "深圳": "SZX", "shenzhen": "SZX",
+    "澳门": "MFM", "macao": "MFM", "macau": "MFM",
+    "厦门": "XMN", "xiamen": "XMN",
+    "三亚": "SYX", "sanya": "SYX",
+    "海口": "HAK", "haikou": "HAK",
+    "昆明": "KMG", "kunming": "KMG",
+    "成都": "CTU", "chengdu": "CTU",
+    "重庆": "CKG", "chongqing": "CKG",
+    "西安": "SIA", "xian": "SIA",
+    "武汉": "WUH", "wuhan": "WUH",
+    "南京": "NKG", "nanjing": "NKG",
+    "杭州": "HGH", "hangzhou": "HGH",
+    "青岛": "TAO", "qingdao": "TAO",
+    "哈尔滨": "HRB", "harbin": "HRB",
+    "乌鲁木齐": "URC", "urumqi": "URC",
 }
 
 

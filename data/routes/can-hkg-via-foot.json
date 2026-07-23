@@ -1,0 +1,46 @@
+{
+  "route_id": "can-hkg-via-foot",
+  "name": "广州→香港 经深圳过关 (城铁+港铁)",
+  "origin": {"city": "广州", "station": "广州南", "code": "CAN"},
+  "destination": {"city": "香港", "station": "尖沙咀", "code": "HKG"},
+  "tags": ["跨境", "短途省钱"],
+  "segments": [
+    {
+      "type": "train_hsr",
+      "from": "广州南",
+      "to": "深圳",
+      "train_no": "城际",
+      "seat": "二等座",
+      "depart": "流水发车",
+      "arrive": "约35分",
+      "duration_min": 35,
+      "price": 80,
+      "comfort": "seat",
+      "note": "广深城际, 待核实"
+    },
+    {
+      "type": "walk_border",
+      "from": "深圳",
+      "to": "福田口岸",
+      "duration_min": 15,
+      "price": 0,
+      "comfort": "walk"
+    },
+    {
+      "type": "metro",
+      "from": "落马洲",
+      "to": "尖沙咀",
+      "duration_min": 50,
+      "price": 60,
+      "comfort": "seat",
+      "note": "港铁东铁线"
+    }
+  ],
+  "total_price": 140,
+  "total_duration_min": 100,
+  "transfers": 2,
+  "departs_overnight": false,
+  "source": "seed_inferred (待核实)",
+  "verified": false,
+  "verified_date": null
+}

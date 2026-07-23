@@ -1,0 +1,34 @@
+{
+  "route_id": "can-hkg-baselines",
+  "name": "广州→香港 直达基准方案",
+  "origin": {"city": "广州", "code": "CAN"},
+  "destination": {"city": "香港", "code": "HKG"},
+  "tags": ["跨境", "直达基准"],
+  "baselines": [
+    {
+      "baseline_id": "can-hkg-hsr-direct",
+      "type": "train_hsr_direct",
+      "name": "高铁直达 西九龙",
+      "train_no": "广深港高铁",
+      "from": "广州南",
+      "to": "香港西九龙",
+      "seat": "二等座",
+      "total_price": 215,
+      "total_duration_min": 45,
+      "transfers": 0,
+      "note": "待核实",
+      "source": "seed_inferred"
+    },
+    {
+      "baseline_id": "can-hkg-flight-direct",
+      "type": "flight_direct",
+      "name": "飞机直达",
+      "total_price": 800,
+      "total_duration_min": 150,
+      "transfers": 0,
+      "note": "短途航线极少且贵, 待核实",
+      "source": "seed_inferred"
+    }
+  ],
+  "verified_date": null
+}

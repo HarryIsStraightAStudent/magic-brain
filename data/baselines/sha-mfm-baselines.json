@@ -1,0 +1,20 @@
+{
+  "route_id": "sha-mfm-baselines",
+  "name": "上海→澳门 直达基准方案",
+  "origin": {"city": "上海", "code": "SHA"},
+  "destination": {"city": "澳门", "code": "MFM"},
+  "tags": ["跨境", "直达基准"],
+  "baselines": [
+    {
+      "baseline_id": "sha-mfm-flight-direct",
+      "type": "flight_direct",
+      "name": "飞机直达",
+      "total_price": 900,
+      "total_duration_min": 160,
+      "transfers": 0,
+      "note": "上海→澳门航线, 待核实",
+      "source": "seed_inferred"
+    }
+  ],
+  "verified_date": null
+}

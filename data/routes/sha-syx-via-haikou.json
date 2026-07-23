@@ -1,0 +1,42 @@
+{
+  "route_id": "sha-syx-via-haikou",
+  "name": "上海→三亚 飞海口+环岛高铁 (省机票钱)",
+  "origin": {"city": "上海", "station": "浦东机场", "code": "SHA"},
+  "destination": {"city": "三亚", "station": "三亚站", "code": "SYX"},
+  "tags": ["国内长途", "空铁联运", "省钱典范"],
+  "segments": [
+    {
+      "type": "flight",
+      "from": "上海浦东",
+      "to": "海口美兰",
+      "flight_no": "待核实",
+      "seat": "经济舱",
+      "depart": "待核实",
+      "arrive": "待核实",
+      "duration_min": 180,
+      "price": 500,
+      "comfort": "seat",
+      "note": "上海→海口比→三亚便宜很多, 待核实"
+    },
+    {
+      "type": "train_hsr",
+      "from": "美兰",
+      "to": "三亚",
+      "train_no": "环岛高铁",
+      "seat": "二等座",
+      "depart": "流水",
+      "arrive": "约1.5h",
+      "duration_min": 90,
+      "price": 100,
+      "comfort": "seat",
+      "note": "美兰站就在机场地下, 零换乘, 待核实"
+    }
+  ],
+  "total_price": 600,
+  "total_duration_min": 270,
+  "transfers": 1,
+  "departs_overnight": false,
+  "source": "seed_inferred (待核实)",
+  "verified": false,
+  "verified_date": null
+}

@@ -1,0 +1,34 @@
+{
+  "route_id": "bjs-hkg-baselines",
+  "name": "北京→香港 直达基准方案",
+  "origin": {"city": "北京", "code": "BJS"},
+  "destination": {"city": "香港", "code": "HKG"},
+  "tags": ["跨境", "直达基准"],
+  "baselines": [
+    {
+      "baseline_id": "bjs-hkg-flight-direct",
+      "type": "flight_direct",
+      "name": "飞机直达",
+      "total_price": 950,
+      "total_duration_min": 210,
+      "transfers": 0,
+      "note": "北京首都→香港赤鱲角, 待核实",
+      "source": "seed_inferred"
+    },
+    {
+      "baseline_id": "bjs-hkg-hsr-direct",
+      "type": "train_hsr_direct",
+      "name": "高铁直达 西九龙",
+      "train_no": "G79",
+      "from": "北京西",
+      "to": "香港西九龙",
+      "seat": "二等座",
+      "total_price": 1180,
+      "total_duration_min": 510,
+      "transfers": 0,
+      "note": "G79 直达, 待核实",
+      "source": "seed_inferred"
+    }
+  ],
+  "verified_date": null
+}

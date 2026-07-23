@@ -26,6 +26,19 @@ from typing import Optional
 from .graph import TransportGraph, Edge, Mode, Comfort
 
 
+def _fmt_duration(minutes: int) -> str:
+    """分钟 -> "12小时9分" / "3小时" / "45分"。"""
+    if minutes <= 0:
+        return "0分"
+    h, m = divmod(minutes, 60)
+    parts = []
+    if h:
+        parts.append(f"{h}小时")
+    if m:
+        parts.append(f"{m}分")
+    return "".join(parts)
+
+
 @dataclass
 class Weights:
     """多目标权重。默认偏价格敏感 (套利场景)。"""
@@ -52,15 +65,30 @@ class Path:
     def destination(self) -> str:
         return self.edges[-1].to_code if self.edges else ""
 
+    @property
+    def transfer_count(self) -> int:
+        """用户视角换乘数 = 真实交通段数 - 1 (第一段是出发, 不算换乘)。"""
+        real = self.user_facing_edges()
+        return max(0, len(real) - 1)
+
+    def user_facing_edges(self) -> list[Edge]:
+        """去掉 0 成本的衔接边 (出发衔接/抵达衔接), 只保留真实交通段。"""
+        return [e for e in self.edges if not (e.price == 0 and e.duration_min == 0)]
+
     def describe(self) -> str:
-        """人类可读路径描述。"""
+        """人类可读路径描述, 隐藏内部 code, 美化输出。"""
         if not self.edges:
             return "(空路径)"
         steps = []
-        for e in self.edges:
-            steps.append(f"{e.label or e.mode.value} {e.from_code}→{e.to_code} (¥{e.price:.0f}, {e.duration_min}min)")
-        head = " ➜ ".join(steps)
-        return f"{head}\n   合计 ¥{self.total_price:.0f} | {self.total_duration_min}min | {self.transfers}次换乘"
+        for e in self.user_facing_edges():
+            steps.append(f"  {e.label or e.mode.value}  ¥{e.price:.0f}  {e.duration_min}min")
+        body = "\n".join(steps)
+        dur = _fmt_duration(self.total_duration_min)
+        return (
+            f"{body}\n"
+            f"  ─────────────────────────────────\n"
+            f"  合计 ¥{self.total_price:.0f}  |  {dur}  |  {self.transfer_count}次换乘"
+        )
 
 
 def edge_cost(e: Edge, w: Weights) -> float:
@@ -126,7 +154,9 @@ def search(
         for e in graph.neighbors(node):
             new_cost = cost + edge_cost(e, w)
             new_path = path_edges + [e]
-            new_transfers = transfers + e.transfer_cost
+            # 换乘计数: 只对真实交通段 (非 0 价 0 时长的衔接边) 计换乘
+            is_real_segment = not (e.price == 0 and e.duration_min == 0)
+            new_transfers = transfers + (e.transfer_cost if is_real_segment else 0)
             heapq.heappush(heap, (
                 new_cost, e.to_code, n_edges + 1, new_path,
                 tot_price + e.price, tot_time + e.duration_min,

@@ -30,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from engine import load_graph, search, Weights
 from engine.loader import get_baselines_for
 from engine.arbitrage import compare_to_baseline
+from agents import run_pipeline, steps_to_json
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
@@ -180,6 +181,59 @@ def _parse_intent(text: str) -> tuple[str | None, str | None]:
             dest = found_codes[1]
 
     return (origin, dest)
+
+
+@app.post("/api/agent")
+def agent_run(req: ChatRequest):
+    """多 Agent 流水线端点。
+
+    返回每步 Agent 的思考过程 + 最终结果, 供 UI 展示 Agent 协作。
+    """
+    def _search_fn(o_code, d_code):
+        """适配器: 调本地搜索引擎, 返回 dict 结构。"""
+        if o_code not in _GRAPH.nodes or d_code not in _GRAPH.nodes:
+            return {"paths": [], "baselines": [], "savings": []}
+        paths = search(_GRAPH, o_code, d_code, weights=Weights(), top_k=5)
+        matched = get_baselines_for(_BASELINES, o_code, d_code)
+        path_outs = []
+        for p in paths:
+            segs = [{
+                "label": e.label or e.mode.value, "mode": e.mode.value,
+                "price": e.price, "duration_min": e.duration_min, "depart": e.schedule_note,
+            } for e in p.user_facing_edges()]
+            path_outs.append({
+                "segments": segs, "total_price": p.total_price,
+                "total_duration_min": p.total_duration_min, "transfers": p.transfer_count,
+                "duration_text": _fmt(p.total_duration_min),
+            })
+        base_outs = [{
+            "name": b["name"], "type": b["type"], "total_price": b["total_price"],
+            "total_duration_min": b["total_duration_min"], "transfers": b.get("transfers", 0),
+            "baseline_id": b.get("baseline_id", ""),
+        } for b in matched]
+        savings_outs = []
+        cheapest = min(paths, key=lambda p: p.total_price) if paths else None
+        if cheapest:
+            for b in matched:
+                rep = compare_to_baseline(
+                    path=cheapest, benchmark_id=b.get("baseline_id", ""),
+                    benchmark_name=b["name"], benchmark_price=b["total_price"],
+                    benchmark_duration_min=b["total_duration_min"])
+                savings_outs.append({
+                    "benchmark_id": rep.benchmark_id, "benchmark_name": rep.benchmark_name,
+                    "benchmark_price": rep.benchmark_price, "savings_price": rep.savings_price,
+                    "savings_ratio": rep.savings_ratio, "time_cost_min": rep.time_cost_min,
+                })
+        return {"paths": path_outs, "baselines": base_outs, "savings": savings_outs}
+
+    res = run_pipeline(req.message.strip(), _search_fn)
+    return {
+        "steps": steps_to_json(res),
+        "reply": res.reply,
+        "route": res.route,
+        "origin_code": res.origin_code,
+        "dest_code": res.dest_code,
+    }
 
 
 @app.post("/api/chat")

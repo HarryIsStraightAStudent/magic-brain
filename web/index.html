@@ -259,6 +259,21 @@
   }
   .quick:hover { color: var(--accent); border-color: rgba(56,189,248,0.3); }
 
+  /* Agent 思考步骤 */
+  .agent-trace { display: flex; flex-direction: column; gap: 6px; margin: 4px 0; }
+  .agent-step { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; }
+  .agent-step .as-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .agent-step .as-body { flex: 1; }
+  .agent-step .as-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+  .agent-step .as-name { font-weight: 600; color: var(--accent); }
+  .agent-step .as-status { font-size: 10px; padding: 1px 6px; border-radius: 999px; }
+  .agent-step .as-status.thinking { background: rgba(56,189,248,0.15); color: var(--accent); }
+  .agent-step .as-status.done { background: rgba(74,222,128,0.12); color: var(--save); }
+  .agent-step .as-status.error { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .agent-step .as-thought { color: var(--text-dim); line-height: 1.5; }
+  .agent-step.thinking .as-thought::after { content: ''; display: inline-block; width: 4px; height: 11px; background: var(--accent); margin-left: 3px; vertical-align: middle; animation: blink 1s infinite; }
+  @keyframes blinkc { 0%,100%{opacity:1} 50%{opacity:0} }
+
   .typing { display: inline-flex; gap: 3px; }
   .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); animation: blink 1.4s infinite; }
   .typing span:nth-child(2){ animation-delay: .2s; } .typing span:nth-child(3){ animation-delay: .4s; }
@@ -604,10 +619,32 @@ function hideTyping(){ const t=document.getElementById('typing'); if(t)t.remove(
 function quickAsk(q){ document.getElementById('ai-input').value=q; sendAI(); }
 async function sendAI(){
   const inp=document.getElementById('ai-input'); const t=inp.value.trim(); if(!t)return;
-  addUser(t); inp.value=''; showTyping();
+  addUser(t); inp.value='';
+  // 显示 Agent 思考容器 (逐步填充)
+  const traceId='trace-'+Date.now();
+  addBot(`<div class="agent-trace" id="${traceId}">
+    <div class="agent-step thinking" id="${traceId}-0"><span class="as-icon">🧠</span><div class="as-body"><div class="as-head"><span class="as-name">意图理解 Agent</span><span class="as-status thinking">思考中</span></div><div class="as-thought">正在理解你的出行需求...</div></div></div>
+    <div class="agent-step" id="${traceId}-1" style="opacity:.4"><span class="as-icon">📋</span><div class="as-body"><div class="as-head"><span class="as-name">任务规划 Agent</span><span class="as-status thinking">等待</span></div><div class="as-thought">排队中</div></div></div>
+    <div class="agent-step" id="${traceId}-2" style="opacity:.4"><span class="as-icon">🔧</span><div class="as-body"><div class="as-head"><span class="as-name">工具调用 Agent</span><span class="as-status thinking">等待</span></div><div class="as-thought">排队中</div></div></div>
+    <div class="agent-step" id="${traceId}-3" style="opacity:.4"><span class="as-icon">💡</span><div class="as-body"><div class="as-head"><span class="as-name">结果解释 Agent</span><span class="as-status thinking">等待</span></div><div class="as-thought">排队中</div></div></div>
+  </div>`);
   try{
-    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
-    const d=await r.json(); hideTyping(); addBot(d.reply);
+    const r=await fetch('/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
+    const d=await r.json();
+    // 逐步揭示 (模拟流式, 间隔让用户看清思考过程)
+    const steps=d.steps||[];
+    for(let i=0;i<steps.length;i++){
+      await new Promise(res=>setTimeout(res, 500));
+      const el=document.getElementById(`${traceId}-${i}`);
+      if(!el) continue;
+      el.style.opacity='1';
+      el.className='agent-step '+steps[i].status;
+      const statusLabel={thinking:'思考中',done:'完成',error:'出错'}[steps[i].status]||steps[i].status;
+      el.innerHTML=`<span class="as-icon">${steps[i].icon}</span><div class="as-body"><div class="as-head"><span class="as-name">${steps[i].agent} Agent</span><span class="as-status ${steps[i].status}">${statusLabel}</span></div><div class="as-thought">${steps[i].thought}</div></div>`;
+    }
+    // 最终回复
+    await new Promise(res=>setTimeout(res, 300));
+    addBot(d.reply);
     if(d.route){ const x=d.route;
       addBot(`<div class="chat-card"><div class="cc-top"><span>🛏️ ${x.title}</span><span class="cc-save">省 ¥${x.savings}</span></div>
         <div class="cc-line"><span class="cc-dot">${x.dept}</span><span class="cc-dot">→</span><span class="cc-dot">${x.arr}</span></div>
@@ -618,7 +655,7 @@ async function sendAI(){
       let wps=wkey?GEO.waypoints[wkey].map(w=>({...w})):(GEO.cities[x.origin_code]&&GEO.cities[x.dest_code]?[{...GEO.cities[x.origin_code]},{...GEO.cities[x.dest_code]}]:null);
       if(wps&&window.__drawRoute) window.__drawRoute(wps);
     }
-  }catch(e){ hideTyping(); addBot('服务暂时不可用，请先用搜索体验。'); }
+  }catch(e){ addBot('服务暂时不可用，请先用搜索体验。'); }
 }
 
 function buildWaypoints(data,idx){

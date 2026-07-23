@@ -652,12 +652,30 @@ async function sendAI(){
         <div class="cc-line"><span class="cc-dot">${x.dept}</span><span class="cc-dot">→</span><span class="cc-dot">${x.arr}</span></div>
         <div class="cc-line" style="margin-top:4px"><span>${x.dept_name}</span><div class="cc-arrow"></div><span>${x.arr_name}</span></div>
         <div class="cc-total">¥${x.price} · ${x.duration}</div>
-        <button onclick="switchTab('search');setTimeout(doSearch,300)">查看完整详情 →</button></div>`);
-      const wkey=Object.keys(GEO.waypoints||{}).find(k=>k.startsWith(x.origin_code+'-'+x.dest_code));
-      let wps=wkey?GEO.waypoints[wkey].map(w=>({...w})):(GEO.cities[x.origin_code]&&GEO.cities[x.dest_code]?[{...GEO.cities[x.origin_code]},{...GEO.cities[x.dest_code]}]:null);
-      if(wps&&window.__drawRoute) window.__drawRoute(wps);
+        <button onclick="switchTab('search')">查看完整详情 →</button></div>`);
+      // 同步: AI 结果 -> 右侧搜索结果浮窗 + 地球画线 (打通用户流)
+      syncSearchFromAgent(d.origin_code, d.dest_code);
     }
   }catch(e){ addBot('服务暂时不可用，请先用搜索体验。'); }
+}
+
+// AI 对话结果同步到右侧搜索浮窗 + 地球画线 (打通用户流)
+async function syncSearchFromAgent(oCode, dCode){
+  if(!oCode||!dCode) return;
+  // 同步下拉
+  document.getElementById('origin').value=oCode;
+  document.getElementById('destination').value=dCode;
+  // 调搜索填充右侧浮窗
+  const box=document.getElementById('results-box'), body=document.getElementById('results-body');
+  box.classList.add('show'); body.innerHTML='<div class="spin"></div>';
+  try{
+    const r=await fetch(`/api/search?origin=${oCode}&destination=${dCode}&weight=price`);
+    const data=await r.json();
+    if(data.error){ body.innerHTML=`<p style="color:var(--danger);font-size:13px;padding:20px 0">${data.error}</p>`; return; }
+    lastData=data; renderResults(data);
+    // 地球画线
+    const wps=buildWaypoints(data,0); if(wps&&window.__drawRoute) window.__drawRoute(wps);
+  }catch(e){ body.innerHTML='<p style="color:var(--danger);font-size:13px;padding:20px 0">加载失败</p>'; }
 }
 
 function buildWaypoints(data,idx){

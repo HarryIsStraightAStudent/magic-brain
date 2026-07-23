@@ -640,8 +640,9 @@ let dragging=false, pX=0,pY=0, autoRotate=true, velX=0,velY=0;
 const MINZ=1.7, MAXZ=5;
 canvas.addEventListener('pointerdown',e=>{dragging=true;focusing=false;autoRotate=false;velX=0;velY=0;pX=e.clientX;pY=e.clientY;canvas.setPointerCapture(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{ if(!dragging)return;
-  velY=(e.clientX-pX)*0.005; velX=0;
+  velY=(e.clientX-pX)*0.005; velX=(e.clientY-pY)*0.005;
   earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0),velY);
+  earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0),velX);
   pX=e.clientX;pY=e.clientY;
 });
 canvas.addEventListener('pointerup',e=>{dragging=false;canvas.releasePointerCapture(e.pointerId);});
@@ -651,18 +652,17 @@ canvas.addEventListener('wheel',e=>{e.preventDefault(); camera.position.z=Math.m
 function animate(){
   requestAnimationFrame(animate);
   if(focusing&&targetRotY!==null){
-    // 只绕 Y 轴平滑插值, 保留固定俯仰角 x=0.3
-    earthGroup.rotation.x = 0.3;
+    // 搜索聚焦: X 平滑收回 0.3 (归正倾角), Y 平滑到目标经度. 整体呈现水平转动
+    earthGroup.rotation.x += (0.3 - earthGroup.rotation.x) * 0.08;
     let dy = targetRotY - earthGroup.rotation.y;
     earthGroup.rotation.y += dy * 0.08;
-    if(Math.abs(dy) < 0.005){ focusing=false; velY=0; }
-  } else if(autoRotate){ earthGroup.rotation.x=0.3; earthGroup.rotation.y+=0.0006; }
-  else {
-    earthGroup.rotation.x = 0.3;
-    if(!dragging && Math.abs(velY)>0.0001){
-      earthGroup.rotation.y += velY;
-      velY*=0.94;
-    }
+    if(Math.abs(dy) < 0.005 && Math.abs(0.3 - earthGroup.rotation.x) < 0.01){ focusing=false; velY=0; velX=0; }
+  } else if(autoRotate){ earthGroup.rotation.y+=0.0006; }
+  else if(!dragging && (Math.abs(velY)>0.0001||Math.abs(velX)>0.0001)){
+    // 惯性: 自由 (X+Y)
+    earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0),velY);
+    earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0),velX);
+    velY*=0.94; velX*=0.94;
   }
   renderer.render(scene,camera);
 }

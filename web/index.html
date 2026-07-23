@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>魔法大脑 · 去哪儿更省钱?</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #FAF7F2;
+    --card: #FFFFFF;
+    --orange: #FF6B35;
+    --orange-soft: #FFE8DE;
+    --green: #2A9D8F;
+    --green-soft: #E0F3F0;
+    --text: #2D2A26;
+    --text-muted: #8B8378;
+    --border: #EDE6DB;
+    --shadow: 0 8px 30px rgba(45, 42, 38, 0.08);
+    --shadow-lg: 0 16px 50px rgba(255, 107, 53, 0.15);
+  }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* 顶部导航 */
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 40px;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .logo { font-size: 20px; font-weight: 700; }
+  .logo span { color: var(--orange); }
+  nav a { color: var(--text-muted); text-decoration: none; margin-left: 24px; font-size: 14px; }
+
+  /* Hero 搜索区 */
+  .hero { text-align: center; padding: 40px 20px 30px; max-width: 700px; margin: 0 auto; }
+  .hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
+  .hero p { color: var(--text-muted); font-size: 16px; }
+
+  /* 搜索卡片 */
+  .search-card {
+    background: var(--card); border-radius: 20px; padding: 24px;
+    box-shadow: var(--shadow); max-width: 600px; margin: 24px auto 0;
+  }
+  .field {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 12px;
+    margin-bottom: 12px; transition: border-color 0.2s;
+  }
+  .field:focus-within { border-color: var(--orange); }
+  .field .icon { font-size: 20px; }
+  .field select, .field input {
+    border: none; outline: none; background: transparent;
+    font-size: 16px; flex: 1; color: var(--text); font-family: inherit;
+  }
+  .field-row { display: flex; gap: 12px; }
+  .field-row .field { flex: 1; margin-bottom: 0; }
+  .btn-search {
+    width: 100%; padding: 16px; background: var(--orange); color: white;
+    border: none; border-radius: 12px; font-size: 17px; font-weight: 600;
+    cursor: pointer; margin-top: 16px; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn-search:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .btn-search:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* 快捷标签 */
+  .quick-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+  .tag {
+    background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 16px; font-size: 14px; cursor: pointer; transition: all 0.2s;
+    color: var(--text-muted);
+  }
+  .tag:hover { border-color: var(--orange); color: var(--orange); }
+  .tag .save { color: var(--green); font-weight: 600; }
+
+  /* 结果区 */
+  #results { max-width: 700px; margin: 40px auto; padding: 0 20px; display: none; }
+  .savings-hero {
+    background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+    color: white; border-radius: 20px; padding: 32px; text-align: center;
+    margin-bottom: 24px; box-shadow: var(--shadow-lg);
+  }
+  .savings-hero .label { font-size: 14px; opacity: 0.9; margin-bottom: 8px; }
+  .savings-hero .amount { font-size: 56px; font-weight: 800; line-height: 1; }
+  .savings-hero .ratio { font-size: 18px; margin-top: 8px; opacity: 0.95; }
+  .savings-hero .vs { font-size: 13px; opacity: 0.85; margin-top: 6px; }
+
+  .path-card {
+    background: var(--card); border-radius: 16px; padding: 20px;
+    margin-bottom: 14px; border: 2px solid transparent; transition: all 0.2s;
+    display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+  }
+  .path-card.recommended { border-color: var(--orange); background: linear-gradient(to right, var(--orange-soft), var(--card)); }
+  .path-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .path-card .left .title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .path-card .left .price { font-size: 28px; font-weight: 800; color: var(--text); }
+  .path-card .left .sub { font-size: 13px; color: var(--text-muted); }
+  .path-card .right { text-align: right; font-size: 13px; color: var(--text-muted); }
+  .path-card .right .dur { font-size: 15px; color: var(--text); font-weight: 500; }
+  .pill {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 12px; margin-right: 6px; margin-top: 8px;
+  }
+  .pill-green { background: var(--green-soft); color: var(--green); }
+  .pill-orange { background: var(--orange-soft); color: var(--orange); }
+  .star { color: var(--orange); }
+
+  .baseline-section { margin-top: 28px; }
+  .baseline-section h3 { font-size: 15px; color: var(--text-muted); margin-bottom: 12px; }
+  .baseline-card {
+    background: var(--card); border-radius: 12px; padding: 16px 20px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    border: 1px solid var(--border);
+  }
+  .baseline-card .name { font-size: 15px; }
+  .baseline-card .name .type-badge { font-size: 12px; color: var(--text-muted); }
+  .baseline-card .price { font-size: 18px; font-weight: 700; color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--orange); }
+
+  /* 加载状态 */
+  .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+  .spinner {
+    border: 3px solid var(--border); border-top: 3px solid var(--orange);
+    border-radius: 50%; width: 40px; height: 40px;
+    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* AI 浮动按钮 */
+  .ai-fab {
+    position: fixed; bottom: 30px; right: 30px;
+    background: var(--orange); color: white; border-radius: 999px;
+    padding: 14px 22px; box-shadow: var(--shadow-lg); cursor: pointer;
+    display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px;
+    animation: pulse 2s ease-in-out infinite; z-index: 100;
+  }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .ai-fab:hover { transform: scale(1.08); }
+
+  /* AI 弹窗 */
+  .ai-modal {
+    position: fixed; bottom: 90px; right: 30px; width: 360px;
+    background: var(--card); border-radius: 20px; box-shadow: var(--shadow-lg);
+    padding: 20px; display: none; z-index: 101;
+  }
+  .ai-modal.show { display: block; }
+  .ai-modal h4 { font-size: 16px; margin-bottom: 12px; }
+  .ai-msg { padding: 10px 14px; border-radius: 12px; font-size: 14px; margin-bottom: 10px; max-width: 85%; }
+  .ai-msg.bot { background: var(--orange-soft); }
+  .ai-msg.user { background: var(--green-soft); margin-left: auto; text-align: right; }
+  .ai-input { display: flex; gap: 8px; margin-top: 12px; }
+  .ai-input input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; }
+
+  .footer { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">🧠 魔法<span>大脑</span></div>
+  <div>
+    <a href="#">省钱案例</a>
+    <a href="#">关于</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>去哪儿, 更省钱?</h1>
+  <p>输入起终点, AI 帮你找到隐藏的中转省钱路线</p>
+</div>
+
+<div class="search-card">
+  <div class="field">
+    <span class="icon">🚄</span>
+    <select id="origin">
+      <option value="">从哪儿出发</option>
+    </select>
+  </div>
+  <div class="field">
+    <span class="icon">📍</span>
+    <select id="destination">
+      <option value="">去哪儿</option>
+    </select>
+  </div>
+  <div class="field-row">
+    <div class="field">
+      <span class="icon">⚖️</span>
+      <select id="weight">
+        <option value="price">省钱优先</option>
+        <option value="balanced">均衡</option>
+        <option value="time">时间优先</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn-search" id="btnSearch" onclick="doSearch()">✨ 魔法搜索</button>
+</div>
+
+<div class="quick-tags" id="quickTags"></div>
+
+<div id="results"></div>
+
+<div class="ai-fab" onclick="toggleAI()">🤖 试试 AI 辅助购票?</div>
+<div class="ai-modal" id="aiModal">
+  <h4>🤖 AI 辅助购票</h4>
+  <div class="ai-msg bot">你好! 告诉我你想去哪, 什么时候, 我帮你找最省钱的走法。</div>
+  <div class="ai-input">
+    <input id="aiInput" placeholder="如: 下周三去香港, 便宜点" onkeydown="if(event.key==='Enter')sendAI()">
+    <button class="btn-search" style="width:auto;padding:10px 16px;margin:0" onclick="sendAI()">发送</button>
+  </div>
+</div>
+
+<div class="footer">魔法大脑 Magic Brain · GOAI Challenge · 让每一程更省</div>
+
+<script>
+let CITIES = {};
+let PAIRS = [];
+
+async function init() {
+  const res = await fetch('/api/cities');
+  const data = await res.json();
+  CITIES = data.cities;
+  PAIRS = data.queryable_pairs;
+  // 填充下拉
+  const oSel = document.getElementById('origin');
+  const dSel = document.getElementById('destination');
+  Object.entries(CITIES).forEach(([code, c]) => {
+    oSel.add(new Option(`${c.name}`, code));
+    dSel.add(new Option(`${c.name}`, code));
+  });
+  // 默认上海→香港
+  oSel.value = 'SHA';
+  dSel.value = 'HKG';
+  // 快捷标签
+  const tags = document.getElementById('quickTags');
+  PAIRS.slice(0, 4).forEach(p => {
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.innerHTML = `${CITIES[p.origin].name}→${CITIES[p.destination].name}`;
+    tag.onclick = () => { oSel.value = p.origin; dSel.value = p.destination; doSearch(); };
+    tags.appendChild(tag);
+  });
+}
+
+async function doSearch() {
+  const o = document.getElementById('origin').value;
+  const d = document.getElementById('destination').value;
+  const w = document.getElementById('weight').value;
+  if (!o || !d) { alert('请选择起点和终点'); return; }
+  const results = document.getElementById('results');
+  results.style.display = 'block';
+  results.innerHTML = `<div class="loading"><div class="spinner"></div>魔法搜索中...</div>`;
+  try {
+    const res = await fetch(`/api/search?origin=${o}&destination=${d}&weight=${w}`);
+    const data = await res.json();
+    if (data.error) { results.innerHTML = `<div class="loading">${data.error}</div>`; return; }
+    renderResults(data);
+  } catch (e) {
+    results.innerHTML = `<div class="loading">搜索出错, 请稍后重试</div>`;
+  }
+}
+
+function renderResults(data) {
+  const results = document.getElementById('results');
+  const savings = data.savings.length ? data.savings.filter(s => s.savings_price > 0).sort((a,b) => b.savings_price - a.savings_price)[0] : null;
+  let html = '';
+
+  // 省钱横幅 (取省得最多的基准对比)
+  if (savings && savings.savings_price > 0) {
+    const sign = savings.time_cost_min < 0 ? '还快' : '';
+    html += `
+      <div class="savings-hero">
+        <div class="label">🎉 你能省</div>
+        <div class="amount">¥${Math.round(savings.savings_price)}</div>
+        <div class="ratio">(${Math.round(savings.savings_ratio*100)}% ↓) ${sign}</div>
+        <div class="vs">比 ${savings.benchmark_name} 便宜</div>
+      </div>`;
+  }
+
+  // 路径卡片
+  data.paths.forEach((p, i) => {
+    const isRec = i === 0 && p.total_price === Math.min(...data.paths.map(x=>x.total_price));
+    const segLabels = p.segments.map(s => s.label.split(' ')[0]).join(' ➜ ');
+    html += `
+      <div class="path-card ${isRec ? 'recommended' : ''}" onclick="alert('${segLabels.replace(/'/g,"")}')">
+        <div class="left">
+          <div class="title">${isRec ? '<span class="star">⭐</span> ' : ''}${segLabels}</div>
+          <div class="price">¥${Math.round(p.total_price)}</div>
+          <div class="sub">${p.segments.length}段 · ${p.transfers}次换乘</div>
+          ${isRec ? '<span class="pill pill-orange">推荐省钱</span>' : ''}
+          <span class="pill pill-green">${p.duration_text}</span>
+        </div>
+        <div class="right">
+          <div class="dur">${p.duration_text}</div>
+          <div>详情 →</div>
+        </div>
+      </div>`;
+  });
+
+  // 基准对比
+  if (data.baselines.length) {
+    html += `<div class="baseline-section">
+      <h3>直达基准对比</h3>`;
+    data.baselines.forEach(b => {
+      const typeName = b.type === 'flight_direct' ? '✈️ 飞机直达' : '🚄 高铁直达';
+      html += `
+        <div class="baseline-card">
+          <div class="name">${typeName}<br><span class="type-badge">${b.name}</span></div>
+          <div class="price">¥${Math.round(b.price)}</div>
+        </div>`;
+    });
+    html += `</div>`;
+  }
+
+  results.innerHTML = html;
+}
+
+// AI 弹窗
+function toggleAI() {
+  const m = document.getElementById('aiModal');
+  m.classList.toggle('show');
+}
+function sendAI() {
+  const input = document.getElementById('aiInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const modal = document.getElementById('aiModal');
+  const userMsg = document.createElement('div');
+  userMsg.className = 'ai-msg user';
+  userMsg.textContent = text;
+  modal.insertBefore(userMsg, modal.querySelector('.ai-input'));
+  input.value = '';
+  // 模拟 AI 回复 (W3 接 GLM 后替换)
+  setTimeout(() => {
+    const botMsg = document.createElement('div');
+    botMsg.className = 'ai-msg bot';
+    botMsg.textContent = '收到! (GLM Agent 集成中, 现在请用上方搜索框体验省钱搜索)';
+    modal.insertBefore(botMsg, modal.querySelector('.ai-input'));
+  }, 600);
+}
+
+init();
+</script>
+</body>
+</html>

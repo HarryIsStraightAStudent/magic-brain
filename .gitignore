@@ -12,6 +12,10 @@ ENV/
 dist/
 build/
 
+# Playwright CLI artifacts
+.playwright-cli/
+output/
+
 # Environment / secrets
 .env
 .env.local

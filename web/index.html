@@ -634,13 +634,15 @@ async function sendAI(){
     // 逐步揭示 (模拟流式, 间隔让用户看清思考过程)
     const steps=d.steps||[];
     for(let i=0;i<steps.length;i++){
-      await new Promise(res=>setTimeout(res, 500));
+      // 第一步先让"思考中"显示一会, 再揭示结果
+      await new Promise(res=>setTimeout(res, 900));
       const el=document.getElementById(`${traceId}-${i}`);
       if(!el) continue;
       el.style.opacity='1';
       el.className='agent-step '+steps[i].status;
       const statusLabel={thinking:'思考中',done:'完成',error:'出错'}[steps[i].status]||steps[i].status;
       el.innerHTML=`<span class="as-icon">${steps[i].icon}</span><div class="as-body"><div class="as-head"><span class="as-name">${steps[i].agent} Agent</span><span class="as-status ${steps[i].status}">${statusLabel}</span></div><div class="as-thought">${steps[i].thought}</div></div>`;
+      el.scrollIntoView({behavior:'smooth', block:'nearest'});
     }
     // 最终回复
     await new Promise(res=>setTimeout(res, 300));

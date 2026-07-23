@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Environment / secrets
+.env
+.env.local
+*.key
+secrets.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Node (frontend)
+node_modules/
+npm-debug.log*
+
+# OS
+Thumbs.db
+
+# Data cache (keep raw datasets, ignore runtime cache)
+cache/
+*.cache
+
+# Logs
+*.log
+logs/

@@ -1,0 +1,47 @@
+{
+  "route_id": "sha-hkg-via-shenzhen-sleeper",
+  "name": "上海→香港 卧铺经深圳过关",
+  "origin": {"city": "上海", "station": "上海南", "code": "SHA"},
+  "destination": {"city": "香港", "station": "尖沙咀", "code": "HKG"},
+  "tags": ["跨境", "卧铺省钱", "套利典范"],
+  "segments": [
+    {
+      "type": "train_sleeper",
+      "from": "上海南",
+      "to": "深圳",
+      "train_no": "D941",
+      "seat": "二等卧",
+      "depart": "21:22",
+      "arrive": "次日09:31",
+      "duration_min": 729,
+      "price": 507,
+      "comfort": "bed",
+      "note": "动卧含一晚住宿, 省酒店费"
+    },
+    {
+      "type": "walk_border",
+      "from": "深圳站",
+      "to": "罗湖口岸",
+      "duration_min": 10,
+      "price": 0,
+      "comfort": "walk",
+      "note": "步行至罗湖口岸"
+    },
+    {
+      "type": "metro",
+      "from": "罗湖",
+      "to": "尖沙咀",
+      "duration_min": 50,
+      "price": 60,
+      "comfort": "seat",
+      "note": "港铁东铁线, 罗湖→尖沙咀"
+    }
+  ],
+  "total_price": 567,
+  "total_duration_min": 789,
+  "transfers": 1,
+  "departs_overnight": true,
+  "source": "manual_2026-07-23 (12306 实测)",
+  "verified": true,
+  "verified_date": "2026-07-23"
+}

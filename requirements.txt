@@ -1,0 +1,20 @@
+# 魔法大脑 (Magic Brain) - 依赖
+# GOAI Challenge - Track 02 Boundless Agents
+#
+# W1 起步只用标准库, 此文件为后续阶段准备。
+# Python 3.11+ (本地 3.14 兼容性已验证标准库路径)
+
+# --- Web 服务 ---
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+
+# --- GLM / LLM ---
+zhipuai>=2.1.0
+httpx>=0.27
+
+# --- 数据处理 ---
+# (前期纯 JSON, 后期再上 SQLite/pandas)
+
+# --- 开发工具 ---
+pytest>=8.0

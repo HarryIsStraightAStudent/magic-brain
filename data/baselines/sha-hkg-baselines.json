@@ -1,0 +1,35 @@
+{
+  "route_id": "sha-hkg-baselines",
+  "name": "上海→香港 直达基准方案",
+  "origin": {"city": "上海", "code": "SHA"},
+  "destination": {"city": "香港", "code": "HKG"},
+  "tags": ["跨境", "直达基准"],
+  "baselines": [
+    {
+      "baseline_id": "sha-hkg-flight-direct",
+      "type": "flight_direct",
+      "name": "飞机直达 (多航班)",
+      "total_price": 696,
+      "total_duration_min": 180,
+      "transfers": 0,
+      "price_alternatives": [696, 723, 825],
+      "note": "最便宜航班 ¥696, 含税费",
+      "source": "manual_2026-07-23"
+    },
+    {
+      "baseline_id": "sha-hkg-hsr-direct",
+      "type": "train_hsr_direct",
+      "name": "高铁直达 西九龙",
+      "train_no": "G99",
+      "from": "上海虹桥",
+      "to": "香港西九龙",
+      "seat": "二等座",
+      "total_price": 966,
+      "total_duration_min": 501,
+      "transfers": 0,
+      "note": "G99 直达, 无需过关换乘",
+      "source": "manual_2026-07-23 (12306 实测)"
+    }
+  ],
+  "verified_date": "2026-07-23"
+}

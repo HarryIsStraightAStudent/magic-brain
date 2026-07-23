@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#3d4a3d",
+                        "surface": "#ffffff",
+                        "surface-container-low": "#f5f4ee",
+                        "tertiary-container": "#a2afa7",
+                        "on-primary-container": "#004b1e",
+                        "tertiary-fixed-dim": "#bdcac1",
+                        "tertiary-fixed": "#d9e6dd",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#55615a",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#006e2f",
+                        "on-tertiary-fixed-variant": "#3e4943",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#22c55e",
+                        "on-surface": "#1b1c19",
+                        "inverse-on-surface": "#f2f1eb",
+                        "surface-dim": "#dbdad4",
+                        "on-primary-fixed-variant": "#005321",
+                        "on-background": "#1b1c19",
+                        "on-secondary-fixed-variant": "#005226",
+                        "secondary-container": "#a4f1b2",
+                        "surface-bright": "#ffffff",
+                        "secondary": "#1f6c3a",
+                        "primary-fixed-dim": "#4ae176",
+                        "on-tertiary-container": "#37433c",
+                        "on-error-container": "#93000a",
+                        "surface-container": "#f0fdf4",
+                        "on-tertiary-fixed": "#131e19",
+                        "on-secondary-container": "#24703e",
+                        "on-primary-fixed": "#002109",
+                        "inverse-surface": "#30312d",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e9e8e2",
+                        "primary-fixed": "#6bff8f",
+                        "on-primary": "#ffffff",
+                        "primary": "#22c55e",
+                        "background": "#ffffff",
+                        "surface-container-highest": "#e3e3dd",
+                        "outline": "#6d7b6c",
+                        "surface-variant": "#f0fdf4",
+                        "on-secondary-fixed": "#00210b",
+                        "secondary-fixed": "#a6f4b5",
+                        "inverse-primary": "#4ae176",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#bccbb9",
+                        "secondary-fixed-dim": "#8bd79b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-sm": "8px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px",
+                        "stack-md": "16px",
+                        "margin-desktop": "40px",
+                        "unit": "8px",
+                        "stack-lg": "32px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-lg-mobile": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "headline-xl": ["Manrope"],
+                        "label-sm": ["Manrope"],
+                        "label-md": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "body-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+                    }
+                },
+            }
+        }
+    </script>
+</head>
+<body class="bg-background min-h-screen flex flex-col font-sans text-on-surface selection:bg-primary-container selection:text-on-primary-container relative overflow-x-hidden">
+<!-- -->
+<div class="fixed inset-0 z-0 pointer-events-none">
+<!-- Soft creamy gradient base -->
+<div class="absolute inset-0 bg-gradient-to-br from-white via-white to-surface-container"></div>
+<div class="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-primary/5 blur-[100px] rounded-full"></div>
+<!-- Realistic Globe Background (Right side) -->
+<div class="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[800px] h-[800px] opacity-80 mix-blend-multiply" data-alt="A highly detailed, photorealistic 3D render of the Earth floating in a clean, soft white environment. The globe features realistic clouds, oceans, and landmasses with warm, cinematic studio lighting highlighting the edges. The aesthetic perfectly matches a bright, high-end travel application in light mode, with creamy whites and subtle earthy tones. Soft, diffused lighting creates a premium, calm atmosphere." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBlgiaJlbJ74BhTqZMVed3lI3ne6PbowkFHkL5am_BFUIznt8K5G5EMS8lJbQa2e2UGvIWYzDGnEIKpkKQVRXNGegrNRVQuavOSOtWYkyRf-wVdDMkIUcMpuUuRoKHN61s_h9jH5ohIWtd2ObwQRcMm-ny4CRuodMX03pxzXvz8NhcEd6wyLS6hl2DwJsRlxtWvo8ZQ4IGe9TR3A0ccHv0Lo8dwbegsANiSn9gJZ8fw0myD4-mJJNlh816JYv-qdKGrwTjbRNlL5sI')">
+</div>
+</div>
+<!-- Top Navigation (Shared Component) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+<div class="flex items-center gap-6">
+<div class="font-headline-md text-headline-md font-bold text-[#22c55e]">
+                魔法大脑
+            </div>
+<!-- Desktop Nav Links -->
+<nav class="hidden md:flex gap-6 ml-10">
+<a class="text-gray-600 font-medium hover:text-[#22c55e] transition-colors font-label-md text-label-md" href="#">
+                    省钱案例
+                </a>
+<a class="text-gray-600 font-medium hover:text-[#22c55e] transition-colors font-label-md text-label-md" href="#">
+                    关于
+                </a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-[#22c55e] text-white font-label-md text-label-md px-4 py-2 rounded-full font-medium shadow-sm hover:opacity-90 transition-opacity flex items-center gap-1"><span class="">立即开启</span><span class="material-symbols-outlined text-[18px]">arrow_forward</span></button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow relative z-10 pt-24 pb-10 px-4 md:px-10 flex items-center min-h-[calc(100vh-100px)]">
+<!-- Grid Layout -->
+<div class="w-full max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Left Side: Interaction Card -->
+<div class="md:col-span-6 lg:col-span-5 flex flex-col justify-center relative">
+<!-- Decorative element behind card -->
+<div class="absolute -inset-4 bg-white/40 blur-2xl rounded-[2rem] z-0"></div>
+<!-- Main Glass Card -->
+<div class="bg-white/70 backdrop-blur-xl border border-white/80 rounded-[24px] shadow-[0_8px_32px_rgba(0,0,0,0.04)] relative z-10 flex flex-col overflow-hidden h-[600px]">
+<!-- Top Tabs -->
+<div class="flex items-center p-2 border-b border-gray-100 bg-white/40">
+<button class="flex-1 py-2 px-4 text-center rounded-lg font-label-md text-label-md text-gray-500 hover:bg-white/60 transition-colors">
+                            魔法搜索
+                        </button>
+<button class="flex-1 py-2 px-4 text-center rounded-lg font-label-md text-label-md bg-white shadow-sm font-bold transition-all relative text-[#22c55e]">🤖 AI 辅助购票<div class="absolute bottom-[-5px] left-1/2 -translate-x-1/2 w-8 h-1 rounded-t-full bg-[#22c55e]"></div></button>
+</div>
+<!-- Chat Interface Canvas -->
+<div class="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-4">
+<!-- Chat Message: Bot -->
+<div class="flex gap-2 max-w-[90%]">
+<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm border border-gray-100 bg-white text-[#22c55e]">
+<span class="material-symbols-outlined text-[18px]">smart_toy</span>
+</div>
+<div class="bg-white/90 rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100">
+<p class="font-body-md text-body-md text-gray-800">你好！告诉我你想去哪，什么时候，我帮你找到最省钱的走法。</p>
+</div>
+</div>
+<!-- Chat Message: User -->
+<div class="flex gap-2 max-w-[90%] self-end flex-row-reverse">
+<div class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center shrink-0 border border-white/50">
+<span class="material-symbols-outlined text-[18px]">person</span>
+</div>
+<div class="text-white rounded-2xl rounded-tr-sm p-4 shadow-sm bg-[#22c55e]"><p class="font-body-md text-body-md">下周三晚下班去香港，便宜点</p></div>
+</div>
+<!-- Chat Message: Bot (Result) -->
+<div class="flex gap-2 max-w-[95%]">
+<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm border border-gray-100 bg-white text-[#22c55e]">
+<span class="material-symbols-outlined text-[18px]">smart_toy</span>
+</div>
+<div class="bg-white/90 rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100 flex flex-col gap-2 w-full">
+<p class="font-body-md text-body-md text-gray-800">已为你找到方案：坐 D941 动卧到深圳再过关，省 ¥399 (41%)。</p>
+<!-- Embedded Journey Card -->
+<div class="bg-green-50/50 rounded-xl p-3 border border-green-100 mt-1">
+<div class="flex justify-between items-center mb-2">
+<div class="flex items-center gap-1 text-[#22c55e]">
+<span class="material-symbols-outlined text-[16px]">train</span>
+<span class="font-label-sm text-label-sm">D941 动卧</span>
+</div>
+<span class="font-label-sm text-label-sm text-white bg-[#22c55e] px-2 py-0.5 rounded-full">省 ¥399</span>
+</div>
+<div class="flex justify-between items-center">
+<div class="text-center">
+<div class="font-headline-md text-headline-md text-gray-900">20:00</div>
+<div class="font-label-sm text-label-sm text-gray-500">出发地</div>
+</div>
+<div class="flex-1 flex items-center justify-center relative px-2">
+<div class="h-0.5 w-full bg-gray-200 relative">
+<div class="absolute inset-0 bg-[#22c55e] w-full"></div>
+</div>
+<span class="material-symbols-outlined absolute text-[#22c55e] text-[16px]">arrow_forward_ios</span>
+</div>
+<div class="text-center">
+<div class="font-headline-md text-headline-md text-gray-900">06:30</div>
+<div class="font-label-sm text-label-sm text-gray-500">深圳北</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-2 py-2 rounded-lg border border-[#22c55e]/20 text-[#22c55e] font-label-md text-label-md hover:bg-[#22c55e]/5 transition-colors">
+                                    查看完整详情
+                                </button>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="p-4 lg:p-6 border-t border-gray-100 bg-white/60 backdrop-blur-md">
+<div class="relative flex items-center">
+<input class="w-full bg-gray-50 border border-gray-200 focus:border-[#22c55e]/50 focus:ring-1 focus:ring-[#22c55e]/50 rounded-full py-3 pl-4 pr-12 font-body-md text-body-md text-gray-800 placeholder:text-gray-400 shadow-inner transition-all outline-none" placeholder="问问魔法大脑..." type="text"/>
+<button class="absolute right-2 w-8 h-8 flex items-center justify-center rounded-full bg-[#22c55e] text-white hover:opacity-90 transition-opacity border-t border-white/80 shadow-sm"><span class="material-symbols-outlined text-[18px]">send</span></button>
+</div>
+<div class="flex gap-2 mt-3 overflow-x-auto pb-1 hide-scrollbar">
+<button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/80 border border-gray-200 font-label-sm text-label-sm text-gray-600 hover:bg-gray-50 transition-colors">推荐周末短途</button>
+<button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/80 border border-gray-200 font-label-sm text-label-sm text-gray-600 hover:bg-gray-50 transition-colors">五一去哪人少</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Side: Globe space (Visual balance) -->
+<div class="hidden md:flex md:col-span-6 lg:col-span-7 items-center justify-center relative">
+<!-- The globe is absolutely positioned in the background layer, this just reserves grid space -->
+</div>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-10 px-8 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/80 backdrop-blur-sm border-t border-gray-100 transition-all duration-200 relative z-20">
+<div class="font-headline-md text-headline-md text-[#22c55e] font-bold">
+            魔法大脑
+        </div>
+<div class="flex gap-8">
+<a class="font-label-md text-label-md text-gray-500 hover:text-[#22c55e] transition-colors" href="#">
+                隐私政策
+            </a>
+<a class="font-label-md text-label-md text-gray-500 hover:text-[#22c55e] transition-colors" href="#">
+                服务条款
+            </a>
+<a class="font-label-md text-label-md text-gray-500 hover:text-[#22c55e] transition-colors" href="#">
+                联系我们
+            </a>
+</div>
+<div class="font-label-md text-label-md text-gray-400">
+            © 2024 Magic Brain AI. 安全、智能、值得信赖。
+        </div>
+</footer>
+<style class="">
+        /* Hide scrollbar for chips */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

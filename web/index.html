@@ -1,346 +1,448 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html class="light" lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>魔法大脑 · 去哪儿更省钱?</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "surface": "#faf9f3",
+          "surface-container-low": "#f5f4ee",
+          "on-surface": "#1b1c19",
+          "on-surface-variant": "#3d4a3d",
+          "primary": "#006e2f",
+          "primary-container": "#22c55e",
+          "on-primary-container": "#004b1e",
+          "secondary": "#1f6c3a",
+          "outline": "#6d7b6c",
+          "surface-variant": "#e3e3dd",
+          "outline-variant": "#bccbb9"
+        },
+        fontFamily: {
+          sans: ["Manrope", "PingFang SC", "sans-serif"]
+        }
+      }
+    }
+  }
+</script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  :root {
-    --bg: #FAF7F2;
-    --card: #FFFFFF;
-    --orange: #FF6B35;
-    --orange-soft: #FFE8DE;
-    --green: #2A9D8F;
-    --green-soft: #E0F3F0;
-    --text: #2D2A26;
-    --text-muted: #8B8378;
-    --border: #EDE6DB;
-    --shadow: 0 8px 30px rgba(45, 42, 38, 0.08);
-    --shadow-lg: 0 16px 50px rgba(255, 107, 53, 0.15);
+  body { font-family: "Manrope", "PingFang SC", sans-serif; }
+
+  /* === Verdant Glass 液态玻璃 === */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-top: 1px solid rgba(255, 255, 255, 0.9);
+    border-left: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 32px 0 rgba(0, 110, 47, 0.08), 0 2px 8px rgba(0,0,0,0.04);
   }
-  body {
-    font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    min-height: 100vh;
+  .glass-nav {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  }
+  .glass-input {
+    background-color: rgba(250, 249, 243, 0.8);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+  }
+  .glass-input:focus {
+    border-color: #22c55e;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  }
+  .green-glow { box-shadow: 0 4px 24px rgba(34, 197, 94, 0.4); }
+
+  /* === 地球 (本地 CSS 渲染, 零外链) === */
+  .globe {
+    background: radial-gradient(circle at 32% 28%,
+      #ffffff 0%, #f0fdf4 8%, #dcfce7 28%, #bbf7d0 55%, #4ade80 78%, #16a34a 100%);
+    box-shadow:
+      inset -50px -50px 120px rgba(20, 83, 45, 0.18),
+      inset 30px 30px 80px rgba(255,255,255,0.5),
+      0 30px 80px rgba(34, 197, 94, 0.18);
+  }
+  .globe::before {
+    content: ""; position: absolute; inset: 0; border-radius: 9999px;
+    background-image: repeating-radial-gradient(circle at 42% 38%,
+      transparent 0, transparent 22px, rgba(255,255,255,0.12) 22px, rgba(255,255,255,0.12) 44px);
+    mix-blend-mode: overlay; opacity: 0.5;
+  }
+  .globe::after {
+    content: ""; position: absolute; top: 8%; left: 18%; width: 38%; height: 38%;
+    background: radial-gradient(circle, rgba(255,255,255,0.6), transparent 70%);
+    border-radius: 9999px; filter: blur(20px);
+  }
+  /* 轨道弧线 */
+  .orbit-arc {
+    position: absolute; border: 1.5px solid rgba(34,197,94,0.25); border-radius: 9999px;
+    border-color: rgba(34,197,94,0.2) transparent transparent transparent;
+    transform: rotate(35deg);
   }
 
-  /* 顶部导航 */
-  nav {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 20px 40px;
-    max-width: 1100px; margin: 0 auto;
+  /* === Tab 切换动画 === */
+  .tab-panel { display: none; }
+  .tab-panel.active {
+    display: block;
+    animation: panelIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   }
-  .logo { font-size: 20px; font-weight: 700; }
-  .logo span { color: var(--orange); }
-  nav a { color: var(--text-muted); text-decoration: none; margin-left: 24px; font-size: 14px; }
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .tab-btn { transition: all 0.3s ease; }
+  .tab-btn.active { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); color:#006e2f; }
 
-  /* Hero 搜索区 */
-  .hero { text-align: center; padding: 40px 20px 30px; max-width: 700px; margin: 0 auto; }
-  .hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.5px; }
-  .hero p { color: var(--text-muted); font-size: 16px; }
+  /* === 聊天气泡 === */
+  .msg { animation: msgIn 0.35s ease; }
+  @keyframes msgIn { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform:none;} }
+  .typing span { animation: blink 1.4s infinite; }
+  .typing span:nth-child(2){ animation-delay: 0.2s; }
+  .typing span:nth-child(3){ animation-delay: 0.4s; }
+  @keyframes blink { 0%,60%,100%{opacity:0.3} 30%{opacity:1} }
 
-  /* 搜索卡片 */
-  .search-card {
-    background: var(--card); border-radius: 20px; padding: 24px;
-    box-shadow: var(--shadow); max-width: 600px; margin: 24px auto 0;
-  }
-  .field {
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 16px; border: 1.5px solid var(--border); border-radius: 12px;
-    margin-bottom: 12px; transition: border-color 0.2s;
-  }
-  .field:focus-within { border-color: var(--orange); }
-  .field .icon { font-size: 20px; }
-  .field select, .field input {
-    border: none; outline: none; background: transparent;
-    font-size: 16px; flex: 1; color: var(--text); font-family: inherit;
-  }
-  .field-row { display: flex; gap: 12px; }
-  .field-row .field { flex: 1; margin-bottom: 0; }
-  .btn-search {
-    width: 100%; padding: 16px; background: var(--orange); color: white;
-    border: none; border-radius: 12px; font-size: 17px; font-weight: 600;
-    cursor: pointer; margin-top: 16px; transition: all 0.2s;
-    font-family: inherit;
-  }
-  .btn-search:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-  .btn-search:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .hide-scrollbar::-webkit-scrollbar { display:none; }
+  .hide-scrollbar { scrollbar-width: none; }
 
-  /* 快捷标签 */
-  .quick-tags { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
-  .tag {
-    background: var(--card); border: 1px solid var(--border); border-radius: 999px;
-    padding: 8px 16px; font-size: 14px; cursor: pointer; transition: all 0.2s;
-    color: var(--text-muted);
-  }
-  .tag:hover { border-color: var(--orange); color: var(--orange); }
-  .tag .save { color: var(--green); font-weight: 600; }
-
-  /* 结果区 */
-  #results { max-width: 700px; margin: 40px auto; padding: 0 20px; display: none; }
-  .savings-hero {
-    background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
-    color: white; border-radius: 20px; padding: 32px; text-align: center;
-    margin-bottom: 24px; box-shadow: var(--shadow-lg);
-  }
-  .savings-hero .label { font-size: 14px; opacity: 0.9; margin-bottom: 8px; }
-  .savings-hero .amount { font-size: 56px; font-weight: 800; line-height: 1; }
-  .savings-hero .ratio { font-size: 18px; margin-top: 8px; opacity: 0.95; }
-  .savings-hero .vs { font-size: 13px; opacity: 0.85; margin-top: 6px; }
-
-  .path-card {
-    background: var(--card); border-radius: 16px; padding: 20px;
-    margin-bottom: 14px; border: 2px solid transparent; transition: all 0.2s;
-    display: flex; justify-content: space-between; align-items: center; cursor: pointer;
-  }
-  .path-card.recommended { border-color: var(--orange); background: linear-gradient(to right, var(--orange-soft), var(--card)); }
-  .path-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-  .path-card .left .title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
-  .path-card .left .price { font-size: 28px; font-weight: 800; color: var(--text); }
-  .path-card .left .sub { font-size: 13px; color: var(--text-muted); }
-  .path-card .right { text-align: right; font-size: 13px; color: var(--text-muted); }
-  .path-card .right .dur { font-size: 15px; color: var(--text); font-weight: 500; }
-  .pill {
-    display: inline-block; padding: 3px 10px; border-radius: 999px;
-    font-size: 12px; margin-right: 6px; margin-top: 8px;
-  }
-  .pill-green { background: var(--green-soft); color: var(--green); }
-  .pill-orange { background: var(--orange-soft); color: var(--orange); }
-  .star { color: var(--orange); }
-
-  .baseline-section { margin-top: 28px; }
-  .baseline-section h3 { font-size: 15px; color: var(--text-muted); margin-bottom: 12px; }
-  .baseline-card {
-    background: var(--card); border-radius: 12px; padding: 16px 20px; margin-bottom: 10px;
-    display: flex; justify-content: space-between; align-items: center;
-    border: 1px solid var(--border);
-  }
-  .baseline-card .name { font-size: 15px; }
-  .baseline-card .name .type-badge { font-size: 12px; color: var(--text-muted); }
-  .baseline-card .price { font-size: 18px; font-weight: 700; color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--orange); }
-
-  /* 加载状态 */
-  .loading { text-align: center; padding: 40px; color: var(--text-muted); }
-  .spinner {
-    border: 3px solid var(--border); border-top: 3px solid var(--orange);
-    border-radius: 50%; width: 40px; height: 40px;
-    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* AI 浮动按钮 */
-  .ai-fab {
-    position: fixed; bottom: 30px; right: 30px;
-    background: var(--orange); color: white; border-radius: 999px;
-    padding: 14px 22px; box-shadow: var(--shadow-lg); cursor: pointer;
-    display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px;
-    animation: pulse 2s ease-in-out infinite; z-index: 100;
-  }
-  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-  .ai-fab:hover { transform: scale(1.08); }
-
-  /* AI 弹窗 */
-  .ai-modal {
-    position: fixed; bottom: 90px; right: 30px; width: 360px;
-    background: var(--card); border-radius: 20px; box-shadow: var(--shadow-lg);
-    padding: 20px; display: none; z-index: 101;
-  }
-  .ai-modal.show { display: block; }
-  .ai-modal h4 { font-size: 16px; margin-bottom: 12px; }
-  .ai-msg { padding: 10px 14px; border-radius: 12px; font-size: 14px; margin-bottom: 10px; max-width: 85%; }
-  .ai-msg.bot { background: var(--orange-soft); }
-  .ai-msg.user { background: var(--green-soft); margin-left: auto; text-align: right; }
-  .ai-input { display: flex; gap: 8px; margin-top: 12px; }
-  .ai-input input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; }
-
-  .footer { text-align: center; padding: 40px; color: var(--text-muted); font-size: 13px; }
+  /* 省钱数字脉动 */
+  .pulse-save { animation: pulseSave 2s ease-in-out infinite; }
+  @keyframes pulseSave { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
 </style>
 </head>
-<body>
+<body class="bg-gradient-to-br from-white via-[#faf9f3] to-[#f0fdf4] text-on-surface min-h-screen flex flex-col relative overflow-x-hidden">
 
-<nav>
-  <div class="logo">🧠 魔法<span>大脑</span></div>
-  <div>
-    <a href="#">省钱案例</a>
-    <a href="#">关于</a>
+<!-- 地球背景 (右侧铺满) -->
+<div class="fixed top-1/2 right-0 -translate-y-1/2 translate-x-[20%] md:translate-x-[25%] w-[600px] h-[600px] md:w-[900px] md:h-[900px] pointer-events-none z-0">
+  <div class="globe relative w-full h-full rounded-full"></div>
+  <div class="orbit-arc w-[120%] h-[120%] -top-[10%] -left-[10%]"></div>
+  <div class="orbit-arc w-[140%] h-[140%] -top-[20%] -left-[20%]" style="transform:rotate(-20deg); border-color: rgba(34,197,94,0.12) transparent transparent transparent;"></div>
+</div>
+
+<!-- 顶部导航 -->
+<nav class="fixed top-0 w-full z-50 glass-nav h-16 flex justify-between items-center px-5 md:px-10">
+  <span class="font-bold text-xl text-[#006e2f]">🧠 魔法大脑</span>
+  <div class="hidden md:flex gap-8">
+    <a class="text-on-surface-variant font-medium hover:text-[#006e2f] transition-colors" href="#">省钱案例</a>
+    <a class="text-on-surface-variant font-medium hover:text-[#006e2f] transition-colors" href="#">关于</a>
   </div>
+  <span class="text-xs text-on-surface-variant bg-white/60 px-3 py-1.5 rounded-full border border-white/70">GOAI · Track 02</span>
 </nav>
 
-<div class="hero">
-  <h1>去哪儿, 更省钱?</h1>
-  <p>输入起终点, AI 帮你找到隐藏的中转省钱路线</p>
-</div>
+<!-- 主内容 -->
+<main class="flex-grow pt-24 pb-10 px-4 md:px-10 flex items-center min-h-screen relative z-10">
+<div class="w-full max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
 
-<div class="search-card">
-  <div class="field">
-    <span class="icon">🚄</span>
-    <select id="origin">
-      <option value="">从哪儿出发</option>
-    </select>
-  </div>
-  <div class="field">
-    <span class="icon">📍</span>
-    <select id="destination">
-      <option value="">去哪儿</option>
-    </select>
-  </div>
-  <div class="field-row">
-    <div class="field">
-      <span class="icon">⚖️</span>
-      <select id="weight">
-        <option value="price">省钱优先</option>
-        <option value="balanced">均衡</option>
-        <option value="time">时间优先</option>
-      </select>
+  <!-- 左侧: 液态玻璃交互卡 -->
+  <div class="md:col-span-6 lg:col-span-5 flex flex-col justify-center relative">
+    <div class="absolute -inset-4 bg-white/30 blur-3xl rounded-[2.5rem] z-0"></div>
+
+    <div class="glass-card rounded-[24px] relative z-10 flex flex-col overflow-hidden h-[620px]">
+      <!-- Tab 切换 -->
+      <div class="flex items-center p-2 gap-2 border-b border-white/60 bg-white/30">
+        <button id="tab-search" class="tab-btn active flex-1 py-2.5 px-4 text-center rounded-xl font-semibold text-sm" onclick="switchTab('search')">
+          ✈️ 魔法搜索
+        </button>
+        <button id="tab-ai" class="tab-btn flex-1 py-2.5 px-4 text-center rounded-xl font-semibold text-sm text-on-surface-variant hover:text-[#006e2f]" onclick="switchTab('ai')">
+          🤖 AI 辅助购票
+        </button>
+      </div>
+
+      <!-- ====== 面板 1: 搜索 ====== -->
+      <div id="panel-search" class="tab-panel active flex-1 overflow-y-auto p-5 md:p-6">
+        <h2 class="font-bold text-2xl mb-1 tracking-tight">去哪儿, 更省钱?</h2>
+        <p class="text-sm text-on-surface-variant mb-5">输入起终点, 发现隐藏的中转套利路线</p>
+
+        <div class="space-y-4">
+          <!-- 始发/终到 -->
+          <div class="grid grid-cols-1 gap-3 relative">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-on-surface-variant">始发地</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">flight_takeoff</span>
+                <select id="origin" class="glass-input w-full rounded-xl py-3 pl-10 pr-4 text-base"></select>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-on-surface-variant">目的地</label>
+              <div class="relative">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">flight_land</span>
+                <select id="destination" class="glass-input w-full rounded-xl py-3 pl-10 pr-4 text-base"></select>
+              </div>
+            </div>
+          </div>
+          <!-- 偏好 -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-on-surface-variant">偏好设置</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">tune</span>
+              <select id="weight" class="glass-input w-full rounded-xl py-3 pl-10 pr-10 text-base cursor-pointer appearance-none">
+                <option value="price">省钱优先</option>
+                <option value="balanced">均衡</option>
+                <option value="time">时间优先</option>
+              </select>
+              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70 pointer-events-none" style="font-size:20px">expand_more</span>
+            </div>
+          </div>
+          <!-- 搜索按钮 -->
+          <button onclick="doSearch()" id="btnSearch" class="w-full bg-[#22c55e] text-white font-bold text-lg py-4 rounded-xl hover:opacity-95 transition-all green-glow border-t border-white/40 flex items-center justify-center gap-2">
+            ✨ 魔法搜索
+          </button>
+        </div>
+
+        <!-- 结果区 (搜索后填充) -->
+        <div id="search-results" class="mt-5 hidden"></div>
+      </div>
+
+      <!-- ====== 面板 2: AI 聊天 ====== -->
+      <div id="panel-ai" class="tab-panel flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-3">
+        <div id="chat-log" class="flex-1 overflow-y-auto flex flex-col gap-3 hide-scrollbar"></div>
+        <!-- 输入区 -->
+        <div class="border-t border-white/60 bg-white/40 backdrop-blur-md pt-3 -mx-4 md:-mx-6 px-4 md:px-6 pb-1">
+          <div class="relative flex items-center">
+            <input id="ai-input" class="glass-input w-full rounded-full py-3 pl-4 pr-14 text-base outline-none" placeholder="问问魔法大脑..." onkeydown="if(event.key==='Enter')sendAI()"/>
+            <button onclick="sendAI()" class="absolute right-2 w-9 h-9 flex items-center justify-center rounded-full bg-[#22c55e] text-white hover:opacity-90 transition-opacity border-t border-white/70 shadow-sm">
+              <span class="material-symbols-outlined" style="font-size:18px">send</span>
+            </button>
+          </div>
+          <div class="flex gap-2 mt-2.5 overflow-x-auto pb-1 hide-scrollbar">
+            <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('下周三晚去香港, 便宜点')">下周三晚去香港</button>
+            <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('上海到三亚怎么省')">上海到三亚怎么省</button>
+            <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('去澳门便宜的走法')">去澳门便宜的走法</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 卡片下快捷标签 -->
+    <div class="flex gap-2 mt-4 flex-wrap">
+      <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🌱 多模态套利</span>
+      <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🚄 空铁联运</span>
     </div>
   </div>
-  <button class="btn-search" id="btnSearch" onclick="doSearch()">✨ 魔法搜索</button>
-</div>
 
-<div class="quick-tags" id="quickTags"></div>
-
-<div id="results"></div>
-
-<div class="ai-fab" onclick="toggleAI()">🤖 试试 AI 辅助购票?</div>
-<div class="ai-modal" id="aiModal">
-  <h4>🤖 AI 辅助购票</h4>
-  <div class="ai-msg bot">你好! 告诉我你想去哪, 什么时候, 我帮你找最省钱的走法。</div>
-  <div class="ai-input">
-    <input id="aiInput" placeholder="如: 下周三去香港, 便宜点" onkeydown="if(event.key==='Enter')sendAI()">
-    <button class="btn-search" style="width:auto;padding:10px 16px;margin:0" onclick="sendAI()">发送</button>
+  <!-- 右侧: 地球占位 (背景层已渲染) -->
+  <div class="hidden md:flex md:col-span-6 lg:col-span-7 items-center justify-center relative">
+    <div class="text-right max-w-xs opacity-0 md:opacity-100">
+      <p class="text-xs text-on-surface-variant/60">数据驱动 · 真实票价</p>
+    </div>
   </div>
 </div>
+</main>
 
-<div class="footer">魔法大脑 Magic Brain · GOAI Challenge · 让每一程更省</div>
+<footer class="w-full py-8 px-8 flex flex-col md:flex-row justify-between items-center gap-3 glass-nav relative z-20">
+  <div class="font-bold text-[#006e2f]">🧠 魔法大脑</div>
+  <div class="text-xs text-on-surface-variant">GOAI Challenge · 让每一程更省</div>
+</footer>
 
 <script>
-let CITIES = {};
-let PAIRS = [];
+let CITIES = {}, PAIRS = [];
 
 async function init() {
   const res = await fetch('/api/cities');
   const data = await res.json();
   CITIES = data.cities;
   PAIRS = data.queryable_pairs;
-  // 填充下拉
   const oSel = document.getElementById('origin');
   const dSel = document.getElementById('destination');
   Object.entries(CITIES).forEach(([code, c]) => {
-    oSel.add(new Option(`${c.name}`, code));
-    dSel.add(new Option(`${c.name}`, code));
+    oSel.add(new Option(c.name, code));
+    dSel.add(new Option(c.name, code));
   });
-  // 默认上海→香港
   oSel.value = 'SHA';
   dSel.value = 'HKG';
-  // 快捷标签
-  const tags = document.getElementById('quickTags');
-  PAIRS.slice(0, 4).forEach(p => {
-    const tag = document.createElement('div');
-    tag.className = 'tag';
-    tag.innerHTML = `${CITIES[p.origin].name}→${CITIES[p.destination].name}`;
-    tag.onclick = () => { oSel.value = p.origin; dSel.value = p.destination; doSearch(); };
-    tags.appendChild(tag);
-  });
 }
 
+// === Tab 切换 ===
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('tab-search').classList.toggle('active', name === 'search');
+  document.getElementById('tab-ai').classList.toggle('active', name === 'ai');
+  document.getElementById('tab-search').classList.toggle('text-on-surface-variant', name !== 'search');
+  document.getElementById('tab-ai').classList.toggle('text-on-surface-variant', name !== 'ai');
+  if (name === 'ai' && document.getElementById('chat-log').children.length === 0) {
+    addBotMsg('你好！告诉我你想去哪，什么时候出发，我帮你找到最省钱的走法。');
+  }
+}
+
+// === 搜索 ===
 async function doSearch() {
   const o = document.getElementById('origin').value;
   const d = document.getElementById('destination').value;
   const w = document.getElementById('weight').value;
-  if (!o || !d) { alert('请选择起点和终点'); return; }
-  const results = document.getElementById('results');
-  results.style.display = 'block';
-  results.innerHTML = `<div class="loading"><div class="spinner"></div>魔法搜索中...</div>`;
+  if (!o || !d) return;
+  const results = document.getElementById('search-results');
+  const btn = document.getElementById('btnSearch');
+  results.classList.remove('hidden');
+  results.innerHTML = `<div class="text-center py-6 text-on-surface-variant text-sm"><div class="inline-block w-8 h-8 border-[3px] border-[#bbf7d0] border-t-[#22c55e] rounded-full animate-spin"></div><div class="mt-3">魔法搜索中...</div></div>`;
+  btn.disabled = true;
   try {
     const res = await fetch(`/api/search?origin=${o}&destination=${d}&weight=${w}`);
     const data = await res.json();
-    if (data.error) { results.innerHTML = `<div class="loading">${data.error}</div>`; return; }
-    renderResults(data);
+    if (data.error) { results.innerHTML = `<div class="text-center py-4 text-sm text-red-500">${data.error}</div>`; return; }
+    renderSearchResults(data);
   } catch (e) {
-    results.innerHTML = `<div class="loading">搜索出错, 请稍后重试</div>`;
+    results.innerHTML = `<div class="text-center py-4 text-sm text-red-500">搜索出错, 请确认后端服务已启动</div>`;
+  } finally {
+    btn.disabled = false;
   }
 }
 
-function renderResults(data) {
-  const results = document.getElementById('results');
-  const savings = data.savings.length ? data.savings.filter(s => s.savings_price > 0).sort((a,b) => b.savings_price - a.savings_price)[0] : null;
+function renderSearchResults(data) {
+  const results = document.getElementById('search-results');
+  const best = data.savings.filter(s => s.savings_price > 0).sort((a,b) => b.savings_price - a.savings_price)[0];
   let html = '';
 
-  // 省钱横幅 (取省得最多的基准对比)
-  if (savings && savings.savings_price > 0) {
-    const sign = savings.time_cost_min < 0 ? '还快' : '';
+  // 省钱横幅
+  if (best) {
+    const faster = best.time_cost_min < 0 ? ' · 还更快' : '';
     html += `
-      <div class="savings-hero">
-        <div class="label">🎉 你能省</div>
-        <div class="amount">¥${Math.round(savings.savings_price)}</div>
-        <div class="ratio">(${Math.round(savings.savings_ratio*100)}% ↓) ${sign}</div>
-        <div class="vs">比 ${savings.benchmark_name} 便宜</div>
+      <div class="pulse-save rounded-2xl p-4 text-white text-center" style="background:linear-gradient(135deg,#22c55e,#16a34a)">
+        <div class="text-xs opacity-90">🎉 你能省</div>
+        <div class="text-4xl font-extrabold leading-none my-1">¥${Math.round(best.savings_price)}</div>
+        <div class="text-sm opacity-95">(${Math.round(best.savings_ratio*100)}% ↓${faster})</div>
+        <div class="text-[11px] opacity-80 mt-1">比 ${best.benchmark_name} 便宜</div>
       </div>`;
   }
 
   // 路径卡片
   data.paths.forEach((p, i) => {
     const isRec = i === 0 && p.total_price === Math.min(...data.paths.map(x=>x.total_price));
-    const segLabels = p.segments.map(s => s.label.split(' ')[0]).join(' ➜ ');
+    const segIcons = p.segments.map(s => modeIcon(s.mode)).join(' ');
+    const segShort = p.segments.map(s => s.label.split(' ')[0]).join(' → ');
     html += `
-      <div class="path-card ${isRec ? 'recommended' : ''}" onclick="alert('${segLabels.replace(/'/g,"")}')">
-        <div class="left">
-          <div class="title">${isRec ? '<span class="star">⭐</span> ' : ''}${segLabels}</div>
-          <div class="price">¥${Math.round(p.total_price)}</div>
-          <div class="sub">${p.segments.length}段 · ${p.transfers}次换乘</div>
-          ${isRec ? '<span class="pill pill-orange">推荐省钱</span>' : ''}
-          <span class="pill pill-green">${p.duration_text}</span>
+      <div class="bg-white/70 border border-white/80 rounded-xl p-3.5 mt-3 ${isRec ? 'ring-2 ring-[#22c55e]/40' : ''}">
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="font-semibold text-sm">${isRec ? '⭐ ' : ''}${segShort}</div>
+            <div class="text-2xl font-extrabold text-[#006e2f]">¥${Math.round(p.total_price)}</div>
+          </div>
+          <div class="text-right text-xs text-on-surface-variant">
+            <div class="text-sm font-medium text-on-surface">${p.duration_text}</div>
+            <div>${p.transfers}次换乘</div>
+          </div>
         </div>
-        <div class="right">
-          <div class="dur">${p.duration_text}</div>
-          <div>详情 →</div>
+        <div class="mt-2 text-lg">${segIcons}</div>
+        <div class="mt-2 flex gap-1.5 flex-wrap">
+          ${isRec ? '<span class="text-[11px] bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-full font-medium">推荐省钱</span>' : ''}
+          <span class="text-[11px] bg-[#f0fdf4] text-[#166534] px-2 py-0.5 rounded-full">${p.duration_text}</span>
+        </div>
+        <div class="mt-2 pt-2 border-t border-gray-100 text-xs space-y-1">
+          ${p.segments.map(s => `<div class="flex justify-between text-on-surface-variant"><span>${modeIcon(s.mode)} ${s.label}</span><span>¥${Math.round(s.price)} · ${durTxt(s.duration_min)}</span></div>`).join('')}
         </div>
       </div>`;
   });
 
   // 基准对比
   if (data.baselines.length) {
-    html += `<div class="baseline-section">
-      <h3>直达基准对比</h3>`;
+    html += `<div class="mt-4"><div class="text-xs font-medium text-on-surface-variant mb-2">直达基准对比</div>`;
     data.baselines.forEach(b => {
-      const typeName = b.type === 'flight_direct' ? '✈️ 飞机直达' : '🚄 高铁直达';
-      html += `
-        <div class="baseline-card">
-          <div class="name">${typeName}<br><span class="type-badge">${b.name}</span></div>
-          <div class="price">¥${Math.round(b.price)}</div>
-        </div>`;
+      const t = b.type === 'flight_direct' ? '✈️ 飞机直达' : '🚄 高铁直达';
+      html += `<div class="bg-white/50 border border-white/60 rounded-lg px-3 py-2 mb-1.5 flex justify-between items-center">
+        <span class="text-sm">${t}</span>
+        <span class="font-bold text-on-surface-variant line-through decoration-[#22c55e] decoration-2">¥${Math.round(b.price)}</span>
+      </div>`;
     });
     html += `</div>`;
   }
-
   results.innerHTML = html;
 }
 
-// AI 弹窗
-function toggleAI() {
-  const m = document.getElementById('aiModal');
-  m.classList.toggle('show');
+function modeIcon(m) {
+  return ({flight:'✈️', train_hsr:'🚄', train_sleeper:'🛏️', train_seat:'🚃', metro:'🚇', bus:'🚌', walk_border:'🚶', taxi:'🚕'})[m] || '•';
 }
-function sendAI() {
-  const input = document.getElementById('aiInput');
+function durTxt(min) {
+  if (min <= 0) return '0分';
+  const h = Math.floor(min/60), m = min%60;
+  return (h ? h+'小时' : '') + (m ? m+'分' : '');
+}
+
+// === AI 聊天 ===
+function addBotMsg(html) {
+  const log = document.getElementById('chat-log');
+  const div = document.createElement('div');
+  div.className = 'msg flex gap-2 max-w-[90%]';
+  div.innerHTML = `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white border border-gray-100 text-[#006e2f] shadow-sm"><span class="material-symbols-outlined" style="font-size:18px">smart_toy</span></div>
+    <div class="bg-white/90 rounded-2xl rounded-tl-sm p-3.5 shadow-sm border border-gray-100 text-sm leading-relaxed">${html}</div>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+function addUserMsg(text) {
+  const log = document.getElementById('chat-log');
+  const div = document.createElement('div');
+  div.className = 'msg flex gap-2 max-w-[90%] self-end flex-row-reverse';
+  div.innerHTML = `<div class="w-8 h-8 rounded-full bg-gray-100 border border-white/50 flex items-center justify-center shrink-0 text-gray-500"><span class="material-symbols-outlined" style="font-size:18px">person</span></div>
+    <div class="bg-[#22c55e] text-white rounded-2xl rounded-tr-sm p-3.5 shadow-sm text-sm">${text}</div>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+function showTyping() {
+  const log = document.getElementById('chat-log');
+  const div = document.createElement('div');
+  div.id = 'typing-indicator';
+  div.className = 'flex gap-2 max-w-[90%]';
+  div.innerHTML = `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white border border-gray-100 text-[#006e2f] shadow-sm"><span class="material-symbols-outlined" style="font-size:18px">smart_toy</span></div>
+    <div class="bg-white/90 rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100 typing text-on-surface-variant"><span>●</span><span>●</span><span>●</span></div>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+function hideTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function quickAsk(q) {
+  document.getElementById('ai-input').value = q;
+  sendAI();
+}
+
+async function sendAI() {
+  const input = document.getElementById('ai-input');
   const text = input.value.trim();
   if (!text) return;
-  const modal = document.getElementById('aiModal');
-  const userMsg = document.createElement('div');
-  userMsg.className = 'ai-msg user';
-  userMsg.textContent = text;
-  modal.insertBefore(userMsg, modal.querySelector('.ai-input'));
+  addUserMsg(text);
   input.value = '';
-  // 模拟 AI 回复 (W3 接 GLM 后替换)
-  setTimeout(() => {
-    const botMsg = document.createElement('div');
-    botMsg.className = 'ai-msg bot';
-    botMsg.textContent = '收到! (GLM Agent 集成中, 现在请用上方搜索框体验省钱搜索)';
-    modal.insertBefore(botMsg, modal.querySelector('.ai-input'));
-  }, 600);
+  showTyping();
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({message: text})
+    });
+    const data = await res.json();
+    hideTyping();
+    addBotMsg(data.reply);
+    if (data.route) {
+      const r = data.route;
+      addBotMsg(`<div class="bg-[#f0fdf4]/60 rounded-xl p-3 border border-[#bbf7d0] mt-1">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-semibold text-[#006e2f]">🛏️ ${r.title}</span>
+          <span class="text-xs text-white bg-[#22c55e] px-2 py-0.5 rounded-full">省 ¥${r.savings}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <div class="text-center"><div class="font-bold text-base">${r.dept}</div><div class="text-[11px] text-gray-500">${r.dept_name}</div></div>
+          <div class="flex-1 flex items-center px-2"><div class="h-0.5 w-full bg-[#22c55e] relative"></div><span class="material-symbols-outlined absolute text-[#22c55e]" style="font-size:16px">arrow_forward_ios</span></div>
+          <div class="text-center"><div class="font-bold text-base">${r.arr}</div><div class="text-[11px] text-gray-500">${r.arr_name}</div></div>
+        </div>
+        <div class="mt-2 text-center font-bold text-[#006e2f]">¥${r.price} · ${r.duration}</div>
+        <button onclick="switchTab('search')" class="w-full mt-2 py-2 rounded-lg border border-[#22c55e]/30 text-[#006e2f] font-semibold text-sm hover:bg-[#22c55e]/5">查看完整详情 →</button>
+      </div>`);
+    }
+  } catch (e) {
+    hideTyping();
+    addBotMsg('抱歉，服务暂时不可用，请先用「魔法搜索」体验省钱路线。');
+  }
 }
 
 init();

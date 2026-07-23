@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Magic Brain - Search Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-surface-variant": "#3d4a3d",
+                "surface": "#faf9f3",
+                "surface-container-low": "#f5f4ee",
+                "tertiary-container": "#a2afa7",
+                "on-primary-container": "#004b1e",
+                "tertiary-fixed-dim": "#bdcac1",
+                "tertiary-fixed": "#d9e6dd",
+                "on-tertiary": "#ffffff",
+                "tertiary": "#55615a",
+                "error-container": "#ffdad6",
+                "on-error": "#ffffff",
+                "surface-tint": "#006e2f",
+                "on-tertiary-fixed-variant": "#3e4943",
+                "on-secondary": "#ffffff",
+                "primary-container": "#22c55e",
+                "on-surface": "#1b1c19",
+                "inverse-on-surface": "#f2f1eb",
+                "surface-dim": "#dbdad4",
+                "on-primary-fixed-variant": "#005321",
+                "on-background": "#1b1c19",
+                "on-secondary-fixed-variant": "#005226",
+                "secondary-container": "#a4f1b2",
+                "surface-bright": "#faf9f3",
+                "secondary": "#1f6c3a",
+                "primary-fixed-dim": "#4ae176",
+                "on-tertiary-container": "#37433c",
+                "on-error-container": "#93000a",
+                "surface-container": "#efeee8",
+                "on-tertiary-fixed": "#131e19",
+                "on-secondary-container": "#24703e",
+                "on-primary-fixed": "#002109",
+                "inverse-surface": "#30312d",
+                "surface-container-lowest": "#ffffff",
+                "surface-container-high": "#e9e8e2",
+                "primary-fixed": "#6bff8f",
+                "on-primary": "#ffffff",
+                "primary": "#006e2f",
+                "background": "#faf9f3",
+                "surface-container-highest": "#e3e3dd",
+                "outline": "#6d7b6c",
+                "surface-variant": "#e3e3dd",
+                "on-secondary-fixed": "#00210b",
+                "secondary-fixed": "#a6f4b5",
+                "inverse-primary": "#4ae176",
+                "error": "#ba1a1a",
+                "outline-variant": "#bccbb9",
+                "secondary-fixed-dim": "#8bd79b"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "stack-sm": "8px",
+                "margin-mobile": "16px",
+                "container-max": "1280px",
+                "stack-md": "16px",
+                "margin-desktop": "40px",
+                "unit": "8px",
+                "stack-lg": "32px",
+                "gutter": "24px",
+                "lg": "24px",
+                "sm": "8px",
+                "md": "16px",
+                "xs": "4px",
+                "xl": "40px"
+        },
+        "fontFamily": {
+                "headline-lg-mobile": [
+                        "Manrope"
+                ],
+                "body-md": [
+                        "Manrope"
+                ],
+                "headline-lg": [
+                        "Manrope"
+                ],
+                "headline-xl": [
+                        "Manrope"
+                ],
+                "label-sm": [
+                        "Manrope"
+                ],
+                "label-md": [
+                        "Manrope"
+                ],
+                "headline-md": [
+                        "Manrope"
+                ],
+                "body-lg": [
+                        "Manrope"
+                ],
+                "display-lg-mobile": ["Manrope"],
+                "display-lg": ["Manrope"],
+                "headline-sm": ["Manrope"]
+        },
+        "fontSize": {
+                "headline-lg-mobile": [
+                        "28px",
+                        {
+                                "lineHeight": "36px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-xl": [
+                        "48px",
+                        {
+                                "lineHeight": "56px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "500"
+                        }
+                ],
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "display-lg-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                "headline-sm": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+        }
+},
+    },
+  }
+</script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid rgba(255, 255, 255, 0.9);
+            border-left: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 32px 0 rgba(0, 110, 47, 0.05);
+        }
+        .input-recessed {
+            background-color: #faf9f3;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .input-recessed:focus {
+            border-color: #22c55e;
+            outline: none;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .green-glow {
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+        }
+        .bg-studio {
+            background: radial-gradient(circle at center, #ffffff 0%, #f0fdf4 100%);
+        }
+    </style>
+</head>
+<body class="bg-studio text-on-surface font-body-md min-h-screen overflow-x-hidden flex flex-col relative">
+<!-- Top Navigation (Shared Component) -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 bg-white/60 backdrop-blur-xl border-b border-white/80 shadow-sm shadow-primary/5 transition-opacity">
+<div class="flex items-center gap-md">
+<span class="font-headline-sm text-headline-sm font-bold text-primary">🧠 魔法大脑</span>
+</div>
+<div class="hidden md:flex gap-lg">
+<a class="text-on-surface-variant font-medium font-body-md text-body-md hover:text-primary transition-colors" href="#">省钱案例</a>
+<a class="text-on-surface-variant font-medium font-body-md text-body-md hover:text-primary transition-colors" href="#">关于</a>
+</div>
+<button class="bg-primary text-on-primary px-lg py-sm rounded-full font-label-md text-label-md font-semibold hover:bg-tertiary transition-colors border-t border-white/80">立即开启</button>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-grow pt-[80px] pb-xl px-margin-mobile md:px-margin-desktop flex flex-col md:flex-row relative z-10 w-full max-w-[1440px] mx-auto min-h-[calc(100vh-100px)] items-center">
+<!-- Left Side: Liquid Glass Search Card -->
+<div class="w-full md:w-5/12 lg:w-4/12 relative z-20 flex flex-col justify-center h-full pt-12 md:pt-0">
+<div class="glass-card rounded-[24px] p-[24px] w-full relative overflow-hidden">
+<!-- Background subtle glow inside card -->
+<div class="absolute -top-12 -left-12 w-32 h-32 bg-white rounded-full opacity-60 blur-[30px]"></div>
+<!-- Tabs -->
+<div class="flex gap-lg border-b border-surface-variant mb-lg relative z-10">
+<button class="pb-sm font-label-md text-label-md font-bold text-primary border-b-2 border-primary">魔法搜索</button>
+<button class="pb-sm font-label-md text-label-md font-medium text-on-surface-variant hover:text-primary transition-colors">AI 辅助</button>
+</div>
+<!-- Search Form -->
+<form class="space-y-md relative z-10">
+<!-- Origin / Destination -->
+<div class="grid grid-cols-1 gap-md relative">
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">始发地</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70">flight_takeoff</span>
+<input class="input-recessed w-full rounded-lg py-3 pl-10 pr-4 text-body-md font-body-md text-on-surface" placeholder="输入城市" type="text" value="Shanghai"/>
+</div>
+</div>
+<!-- Swap Icon -->
+<div class="absolute left-6 top-[55%] -translate-y-1/2 z-10 bg-white shadow-sm border border-surface-variant rounded-full p-1 cursor-pointer hover:bg-surface transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary">swap_vert</span>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">目的地</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70">flight_land</span>
+<input class="input-recessed w-full rounded-lg py-3 pl-10 pr-4 text-body-md font-body-md text-on-surface" placeholder="输入城市" type="text" value="Hong Kong"/>
+</div>
+</div>
+</div>
+<!-- Date Picker -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">出发日期</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70">calendar_month</span>
+<input class="input-recessed w-full rounded-lg py-3 pl-10 pr-4 text-body-md font-body-md text-on-surface cursor-pointer text-on-surface-variant" type="date"/>
+</div>
+</div>
+<!-- Optimization Preference -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-sm text-label-sm text-on-surface-variant">偏好设置</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70">tune</span>
+<select class="input-recessed w-full rounded-lg py-3 pl-10 pr-10 text-body-md font-body-md text-on-surface cursor-pointer appearance-none">
+<option selected="">省钱优先</option>
+<option>时间优先</option>
+<option>舒适优先</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70 pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Submit Button -->
+<div class="pt-sm">
+<button class="w-full bg-primary-container text-on-primary-container font-headline-sm text-headline-sm font-bold py-4 rounded-xl hover:opacity-90 transition-all border-t border-white/60 flex items-center justify-center gap-sm green-glow" type="button">✨ 魔法搜索</button>
+</div>
+</form>
+</div>
+<!-- Contextual chips below form -->
+<div class="flex gap-sm mt-md flex-wrap">
+<span class="bg-white/40 backdrop-blur-md border border-white/60 px-3 py-1 rounded-full font-label-sm text-label-sm text-on-surface shadow-sm">Eco-friendly</span>
+<span class="bg-white/40 backdrop-blur-md border border-white/60 px-3 py-1 rounded-full font-label-sm text-label-sm text-on-surface shadow-sm">Direct flights</span>
+</div>
+</div>
+<!-- Right Side: 3D Globe Representation -->
+<!-- In a real scenario, this would be a webgl-shader or threejs-scene. Using a visual placeholder here designed to look like a highly realistic earth rendering against the studio bg -->
+<div class="absolute right-0 top-0 w-full md:w-3/4 h-full z-0 flex items-center justify-end overflow-visible pointer-events-none">
+<!-- Simulated Globe Container -->
+<div class="w-[800px] h-[800px] md:w-[1000px] md:h-[1000px] rounded-full absolute translate-x-1/4" style="background: radial-gradient(circle at 30% 30%, #f0fdf4 0%, #dcfce7 40%, #bbf7d0 80%, #22c55e 100%); box-shadow: inset -40px -40px 100px rgba(20, 83, 45, 0.1), 0 20px 60px rgba(34, 197, 94, 0.1);">
+<!-- Abstract map overlay to imply a globe without using an image -->
+<div class="absolute inset-0 rounded-full overflow-hidden opacity-30 mix-blend-overlay" style="background-image: repeating-radial-gradient(circle at 40% 40%, transparent 0, transparent 20px, rgba(255,255,255,0.1) 20px, rgba(255,255,255,0.1) 40px);"></div>
+<div class="absolute inset-0 rounded-full border border-white/20"></div>
+<!-- Highlight -->
+<div class="absolute top-10 left-20 w-[400px] h-[400px] bg-white rounded-full blur-[80px] opacity-40"></div>
+</div>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-xl px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-md bg-surface border-t border-surface-container-low relative z-20">
+<div class="font-headline-sm text-headline-sm font-bold text-primary">🧠 魔法大脑</div>
+<div class="text-on-surface-variant font-label-md text-label-md">© 2024 Magic Brain AI. 安全、智能、值得信赖。</div>
+<div class="flex gap-md">
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-secondary transition-colors" href="#">隐私政策</a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-secondary transition-colors" href="#">服务条款</a>
+<a class="text-on-surface-variant font-label-md text-label-md hover:text-secondary transition-colors" href="#">联系我们</a>
+</div>
+</footer>
+</body></html>

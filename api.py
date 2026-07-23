@@ -252,6 +252,8 @@ def chat(req: ChatRequest):
             "price": int(cheapest.total_price),
             "duration": _fmt(cheapest.total_duration_min),
             "savings": int(best_saving.savings_price),
+            "origin_code": origin,
+            "dest_code": dest,
         },
     }
 
@@ -289,6 +291,15 @@ def cities():
         "cities": city_data["cities"],
         "queryable_pairs": [{"origin": o, "destination": d} for o, d in sorted(pairs)],
     }
+
+
+@app.get("/api/geo")
+def geo():
+    """城市/线路经纬度 (用于地球画真实路径)。"""
+    geo_file = DATA_DIR / "geo.json"
+    if not geo_file.exists():
+        return {"cities": {}, "waypoints": {}}
+    return json.loads(geo_file.read_text(encoding="utf-8"))
 
 
 @app.get("/api/search", response_model=SearchResponse)

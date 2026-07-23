@@ -629,10 +629,12 @@ function drawRoute(wps){
   focusOn(center);
 }
 let targetRotY=null, focusing=false;
-function focusOn(wp){ autoRotate=false; velY=0;
-  // 只绕 Y 轴聚焦: 让该经度转到正面. 目标 y = -(lng)*π/180 + 校准常数(让中国经度朝前)
-  // 校准: 初始 rotation.y=-1.9 时中国(lng~115)朝前 => -1.9 ≈ -(115°)*π/180 + C => C ≈ 0.11
-  targetRotY = -(wp.lng * Math.PI/180) + 0.11;
+function focusOn(wp){ autoRotate=false; velY=0; velX=0;
+  // 用完整四元数把目标点转到正面, 再分解出 Yaw (只保留水平转动, X 用固定俯仰)
+  const v=latLngToVec3(wp.lat,wp.lng,1).normalize();
+  const fullQ=new THREE.Quaternion().setFromUnitVectors(v, new THREE.Vector3(0,0,1));
+  const e=new THREE.Euler().setFromQuaternion(fullQ, 'YXZ');
+  targetRotY = e.y;
   focusing = true;
 }
 // 交互
@@ -641,8 +643,9 @@ const MINZ=1.7, MAXZ=5;
 canvas.addEventListener('pointerdown',e=>{dragging=true;focusing=false;autoRotate=false;velX=0;velY=0;pX=e.clientX;pY=e.clientY;canvas.setPointerCapture(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{ if(!dragging)return;
   velY=(e.clientX-pX)*0.005; velX=(e.clientY-pY)*0.005;
-  earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0),velY);
-  earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0),velX);
+  earthGroup.rotation.y += velY;
+  earthGroup.rotation.x += velX;
+  earthGroup.rotation.x = Math.max(-1.2, Math.min(1.2, earthGroup.rotation.x));
   pX=e.clientX;pY=e.clientY;
 });
 canvas.addEventListener('pointerup',e=>{dragging=false;canvas.releasePointerCapture(e.pointerId);});
@@ -659,9 +662,10 @@ function animate(){
     if(Math.abs(dy) < 0.005 && Math.abs(0.3 - earthGroup.rotation.x) < 0.01){ focusing=false; velY=0; velX=0; }
   } else if(autoRotate){ earthGroup.rotation.y+=0.0006; }
   else if(!dragging && (Math.abs(velY)>0.0001||Math.abs(velX)>0.0001)){
-    // 惯性: 自由 (X+Y)
-    earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0),velY);
-    earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0),velX);
+    // 惯性: 自由 (X+Y), 用 rotation 保持状态可读
+    earthGroup.rotation.y += velY;
+    earthGroup.rotation.x += velX;
+    earthGroup.rotation.x = Math.max(-1.2, Math.min(1.2, earthGroup.rotation.x));
     velY*=0.94; velX*=0.94;
   }
   renderer.render(scene,camera);

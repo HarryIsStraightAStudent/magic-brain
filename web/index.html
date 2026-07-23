@@ -620,35 +620,58 @@ function latLngToVec3(lat,lng,radius=R){
 }
 let markers=[];
 const _projV=new THREE.Vector3();
-function renderLabels(){
+let _labelEls=[]; // 复用的 DOM, 索引对应 markers
+function ensureLabelDOM(){
   const layer=document.getElementById('labels-layer');
-  // 清空重建
-  layer.innerHTML='';
-  if(!markers.length) return;
-  const rect=wrap.getBoundingClientRect();
-  markers.forEach(m=>{
-    // 该点世界坐标
-    _projV.copy(latLngToVec3(m.lat,m.lng,R+0.02)).applyMatrix4(earthGroup.matrixWorld);
-    // 判断是否在地球正面 (z>0 且不被地球遮挡): 简化用 z 分量
-    const camDir=new THREE.Vector3().subVectors(_projV,camera.position).normalize();
-    const surfNormal=_projV.clone().normalize();
-    const facing=surfNormal.dot(camDir); // <0 表示正面朝相机
-    if(facing>0.05) return; // 背面不显示
-    // 投影到屏幕
-    const ndc=_projV.clone().project(camera);
-    if(ndc.z>1) return;
-    const x=(ndc.x*0.5+0.5)*rect.width;
-    const y=(-ndc.y*0.5+0.5)*rect.height;
-    if(x<-50||x>rect.width+50||y<-50||y>rect.height+50) return;
+  // 数量对齐
+  while(_labelEls.length < markers.length){
     const el=document.createElement('div');
     el.className='label-anchor';
     el.style.position='absolute';
-    el.style.left=x+'px'; el.style.top=y+'px';
     const lbl=document.createElement('div');
-    lbl.className='map-label '+(m.type==='end'?'end':'mid');
-    lbl.textContent=m.name;
     el.appendChild(lbl);
     layer.appendChild(el);
+    _labelEls.push({el, lbl, midHandler:null, name:''});
+  }
+  while(_labelEls.length > markers.length){
+    const o=_labelEls.pop(); o.el.remove();
+  }
+  // 同步每个标签的内容和事件
+  markers.forEach((m,i)=>{
+    const o=_labelEls[i];
+    o.lbl.className='map-label '+(m.type==='end'?'end':'mid');
+    if(m.name!==o.name){
+      o.lbl.textContent=m.name; o.name=m.name;
+      // 重建事件
+      if(o.midHandler){ o.el.removeEventListener('mouseenter',o.midHandler.enter); o.el.removeEventListener('mouseleave',o.midHandler.leave); o.midHandler=null; }
+      if(m.type==='mid'){
+        o.lbl.style.display='none';
+        const enter=()=>{ o.lbl.style.display='block'; };
+        const leave=()=>{ o.lbl.style.display='none'; };
+        o.el.addEventListener('mouseenter',enter); o.el.addEventListener('mouseleave',leave);
+        o.midHandler={enter,leave};
+      } else { o.lbl.style.display='block'; }
+    }
+  });
+}
+function renderLabels(){
+  if(!markers.length){ _labelEls.forEach(o=>o.el.style.display='none'); return; }
+  ensureLabelDOM();
+  const rect=wrap.getBoundingClientRect();
+  markers.forEach((m,i)=>{
+    const o=_labelEls[i];
+    _projV.copy(latLngToVec3(m.lat,m.lng,R+0.02)).applyMatrix4(earthGroup.matrixWorld);
+    const camDir=new THREE.Vector3().subVectors(_projV,camera.position).normalize();
+    const surfNormal=_projV.clone().normalize();
+    const facing=surfNormal.dot(camDir);
+    if(facing>0.05){ o.el.style.display='none'; return; }
+    const ndc=_projV.clone().project(camera);
+    if(ndc.z>1){ o.el.style.display='none'; return; }
+    const x=(ndc.x*0.5+0.5)*rect.width;
+    const y=(-ndc.y*0.5+0.5)*rect.height;
+    if(x<-50||x>rect.width+50||y<-50||y>rect.height+50){ o.el.style.display='none'; return; }
+    o.el.style.display='';
+    o.el.style.left=x+'px'; o.el.style.top=y+'px';
   });
 }
 function makeArc(a,b,segs=40,lift=0){
@@ -659,7 +682,7 @@ function makeArc(a,b,segs=40,lift=0){
   return pts;
 }
 let pathLayer=null;
-function clearRoute(){ if(pathLayer){earthGroup.remove(pathLayer); pathLayer.traverse(o=>{o.geometry?.dispose();o.material?.dispose();}); pathLayer=null;} markers=[]; renderLabels(); }
+function clearRoute(){ if(pathLayer){earthGroup.remove(pathLayer); pathLayer.traverse(o=>{o.geometry?.dispose();o.material?.dispose();}); pathLayer=null;} markers=[]; _labelEls.forEach(o=>o.el.remove()); _labelEls=[]; }
 function drawRoute(wps){
   clearRoute(); pathLayer=new THREE.Group(); markers=[];
   for(let i=0;i<wps.length-1;i++){

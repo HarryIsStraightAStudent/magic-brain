@@ -1,678 +1,671 @@
 <!DOCTYPE html>
-<html class="light" lang="zh-CN">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>魔法大脑 · 去哪儿更省钱?</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<script>
-  tailwind.config = {
-    darkMode: "class",
-    theme: { extend: {
-      colors: {
-        "surface": "#faf9f3", "on-surface": "#1b1c19", "on-surface-variant": "#3d4a3d",
-        "primary": "#006e2f", "primary-container": "#22c55e", "on-primary-container": "#004b1e",
-        "secondary": "#1f6c3a", "outline": "#6d7b6c"
-      },
-      fontFamily: { sans: ["Manrope", "PingFang SC", "sans-serif"] }
-    }}
-  }
-</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>魔法大脑 · AI 交通套利</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-  body { font-family: "Manrope", "PingFang SC", sans-serif; }
-  .glass-card {
-    background: rgba(255,255,255,0.72);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border-top: 1px solid rgba(255,255,255,0.9);
-    border-left: 1px solid rgba(255,255,255,0.9);
-    box-shadow: 0 8px 32px 0 rgba(0,110,47,0.08), 0 2px 8px rgba(0,0,0,0.04);
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --bg: #05070f;
+    --glass: rgba(15, 23, 42, 0.55);
+    --glass-border: rgba(148, 163, 184, 0.15);
+    --glass-hi: rgba(255,255,255,0.06);
+    --accent: #38bdf8;
+    --accent-2: #22d3ee;
+    --save: #4ade80;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --text-faint: #64748b;
+    --danger: #f87171;
   }
-  .glass-nav {
-    background: rgba(255,255,255,0.55);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    border-bottom: 1px solid rgba(255,255,255,0.7);
+  html, body {
+    height: 100%; overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Manrope", -apple-system, "PingFang SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
-  .glass-input {
-    background-color: rgba(250,249,243,0.8);
-    border: 1px solid transparent;
-    transition: all 0.2s ease;
+  /* 星空背景层 */
+  #stars {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.8), transparent),
+      radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1px 1px at 40% 80%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 10% 60%, rgba(255,255,255,0.7), transparent),
+      radial-gradient(2px 2px at 70% 40%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 90% 90%, rgba(255,255,255,0.6), transparent),
+      radial-gradient(1px 1px at 30% 50%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 85% 65%, rgba(255,255,255,0.6), transparent);
+    background-size: 600px 600px;
+    animation: drift 120s linear infinite;
   }
-  .glass-input:focus { border-color: #22c55e; outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
-  .green-glow { box-shadow: 0 4px 24px rgba(34,197,94,0.4); }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: flex; animation: panelIn 0.4s cubic-bezier(0.22,1,0.36,1); }
-  @keyframes panelIn { from{opacity:0;transform:translateY(8px) scale(0.98)} to{opacity:1;transform:none} }
-  .tab-btn { transition: all 0.3s ease; }
-  .tab-btn.active { background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.06); color:#006e2f; }
-  .msg { animation: msgIn 0.35s ease; }
-  @keyframes msgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
-  .typing span { animation: blink 1.4s infinite; }
-  .typing span:nth-child(2){animation-delay:0.2s}
-  .typing span:nth-child(3){animation-delay:0.4s}
-  @keyframes blink { 0%,60%,100%{opacity:0.3} 30%{opacity:1} }
-  .hide-scrollbar::-webkit-scrollbar{display:none}
-  .hide-scrollbar{scrollbar-width:none}
-  .pulse-save{animation:pulseSave 2s ease-in-out infinite}
-  @keyframes pulseSave{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
-  .view{display:none}
-  .view.active{display:block;animation:panelIn 0.4s ease}
-  #globe-canvas{cursor:grab}
-  #globe-canvas:active{cursor:grabbing}
-  .timeline-dot{box-shadow:0 0 0 4px #f0fdf4}
-  .route-card.selected{ring-color:#22c55e}
+  @keyframes drift { to { background-position: 600px 600px; } }
+
+  /* 地球画布 */
+  #globe-wrap {
+    position: fixed; inset: 0; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #globe-canvas { width: 100%; height: 100%; cursor: grab; }
+  #globe-canvas:active { cursor: grabbing; }
+
+  /* 毛玻璃通用 */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 var(--glass-hi);
+  }
+
+  /* 顶部导航 */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    height: 56px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    background: rgba(5,7,15,0.6);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .logo { font-weight: 800; font-size: 16px; letter-spacing: 0.02em; }
+  .logo b { color: var(--accent); }
+  .nav-links { display: flex; gap: 24px; }
+  .nav-link {
+    font-size: 13px; color: var(--text-dim); cursor: pointer; transition: color .2s;
+    background: none; border: none; font-family: inherit;
+  }
+  .nav-link:hover { color: var(--text); }
+  .badge {
+    font-size: 11px; color: var(--accent);
+    border: 1px solid rgba(56,189,248,0.3); background: rgba(56,189,248,0.08);
+    padding: 3px 10px; border-radius: 999px;
+  }
+
+  /* 左上主浮窗 */
+  #panel {
+    position: fixed; top: 76px; left: 24px; z-index: 30;
+    width: 380px; max-height: calc(100vh - 100px);
+    border-radius: 20px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .tab-bar {
+    display: flex; padding: 8px; gap: 6px;
+    border-bottom: 1px solid var(--glass-border);
+    flex-shrink: 0;
+  }
+  .tab-btn {
+    flex: 1; padding: 9px; border-radius: 10px; cursor: pointer;
+    font-size: 13px; font-weight: 600; font-family: inherit;
+    background: none; border: none; color: var(--text-dim);
+    transition: all .25s;
+  }
+  .tab-btn.active {
+    background: rgba(56,189,248,0.12); color: var(--accent);
+    box-shadow: inset 0 0 0 1px rgba(56,189,248,0.2);
+  }
+  .tab-pane { display: none; flex: 1; overflow-y: auto; padding: 18px; }
+  .tab-pane.active { display: block; }
+  .tab-pane::-webkit-scrollbar { width: 4px; }
+  .tab-pane::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+
+  .panel-title { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
+  .panel-sub { font-size: 12px; color: var(--text-dim); margin-bottom: 16px; }
+
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 11px; color: var(--text-faint); margin-bottom: 5px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row > .field { flex: 1; }
+  .input, .select {
+    width: 100%; padding: 10px 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px; color: var(--text);
+    font-size: 14px; font-family: inherit; outline: none;
+    transition: all .2s;
+  }
+  .input:focus, .select:focus {
+    border-color: var(--accent);
+    background: rgba(56,189,248,0.06);
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.1);
+  }
+  .select { appearance: none; cursor: pointer;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+  .select option { background: #0f172a; }
+
+  .btn-primary {
+    width: 100%; padding: 12px; margin-top: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #051018; border: none; border-radius: 11px;
+    font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
+    transition: all .2s; box-shadow: 0 4px 20px rgba(56,189,248,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(56,189,248,0.45); }
+  .btn-primary:disabled { opacity: 0.5; cursor: wait; }
+
+  /* 结果浮窗 (右下) */
+  #results-box {
+    position: fixed; bottom: 24px; right: 24px; z-index: 30;
+    width: 360px; max-height: calc(100vh - 130px);
+    border-radius: 18px; overflow: hidden;
+    display: none; flex-direction: column;
+  }
+  #results-box.show { display: flex; animation: slideUp .4s cubic-bezier(.22,1,.36,1); }
+  @keyframes slideUp { from { opacity:0; transform: translateY(20px);} to {opacity:1; transform:none;} }
+  .results-head { padding: 14px 18px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
+  .results-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+  .results-body::-webkit-scrollbar { width: 4px; }
+  .results-body::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+  .close-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 18px; line-height: 1; }
+
+  /* 省钱横幅 */
+  .save-hero {
+    text-align: center; padding: 20px 16px; margin-bottom: 14px;
+    background: linear-gradient(135deg, rgba(74,222,128,0.18), rgba(34,211,238,0.1));
+    border: 1px solid rgba(74,222,128,0.25); border-radius: 14px;
+  }
+  .save-hero .lbl { font-size: 11px; color: var(--save); letter-spacing: 0.08em; }
+  .save-hero .amt { font-size: 40px; font-weight: 800; color: #fff; line-height: 1; margin: 4px 0; }
+  .save-hero .ratio { font-size: 13px; color: var(--save); }
+  .save-hero .vs { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
+
+  /* 路线卡 */
+  .route {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer;
+    transition: all .2s;
+  }
+  .route:hover { background: rgba(56,189,248,0.06); border-color: rgba(56,189,248,0.25); }
+  .route.rec { border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.05); }
+  .route-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .route-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .route-price { font-size: 22px; font-weight: 800; color: var(--accent); }
+  .route-meta { font-size: 11px; color: var(--text-dim); text-align: right; }
+  .route-meta .dur { font-size: 12px; color: var(--text); display: block; }
+  .route-hint { font-size: 11px; color: var(--accent); margin-top: 8px; }
+  .pill { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 999px; margin-right: 5px; margin-top: 6px; }
+  .pill-green { background: rgba(74,222,128,0.15); color: var(--save); }
+  .pill-cyan { background: rgba(56,189,248,0.12); color: var(--accent); }
+
+  .base-list { margin-top: 12px; }
+  .base-title { font-size: 11px; color: var(--text-faint); margin-bottom: 8px; letter-spacing: 0.04em; }
+  .base-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; margin-bottom: 6px; border-radius: 8px;
+    background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);
+    font-size: 13px;
+  }
+  .base-price { color: var(--text-faint); text-decoration: line-through; text-decoration-color: var(--danger); font-weight: 600; }
+
+  /* 聊天 */
+  #chat-log { display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
+  .msg { max-width: 88%; animation: msgIn .3s; }
+  @keyframes msgIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;} }
+  .msg.bot { align-self: flex-start; }
+  .msg.user { align-self: flex-end; }
+  .bubble {
+    padding: 9px 13px; border-radius: 14px; font-size: 13px; line-height: 1.55;
+  }
+  .msg.bot .bubble {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+    border-bottom-left-radius: 4px;
+  }
+  .msg.user .bubble {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #051018; font-weight: 500;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-card {
+    margin-top: 6px; padding: 10px 12px; border-radius: 10px;
+    background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.2);
+    font-size: 12px;
+  }
+  .chat-card .cc-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .chat-card .cc-save { background: var(--save); color: #051018; font-size: 10px; padding: 2px 7px; border-radius: 999px; font-weight: 700; }
+  .chat-card .cc-line { display: flex; align-items: center; gap: 8px; color: var(--text-dim); }
+  .chat-card .cc-dot { font-size: 13px; color: var(--text); font-weight: 600; }
+  .chat-card .cc-arrow { flex: 1; height: 1px; background: var(--accent); position: relative; }
+  .chat-card .cc-total { text-align: center; color: var(--accent); font-weight: 700; margin-top: 6px; }
+  .chat-card button {
+    width: 100%; margin-top: 8px; padding: 7px; border-radius: 8px;
+    background: none; border: 1px solid rgba(56,189,248,0.3); color: var(--accent);
+    font-size: 12px; font-family: inherit; cursor: pointer;
+  }
+  .chat-input-wrap { padding-top: 10px; border-top: 1px solid var(--glass-border); }
+  .chat-input-row { display: flex; gap: 8px; align-items: center; }
+  .chat-input {
+    flex: 1; padding: 10px 14px; background: rgba(255,255,255,0.04);
+    border: 1px solid var(--glass-border); border-radius: 999px;
+    color: var(--text); font-size: 13px; font-family: inherit; outline: none;
+  }
+  .chat-input:focus { border-color: var(--accent); }
+  .send-btn {
+    width: 36px; height: 36px; border-radius: 999px; border: none; cursor: pointer;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #051018;
+    font-size: 15px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .quick-row { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; }
+  .quick-row::-webkit-scrollbar { display: none; }
+  .quick {
+    white-space: nowrap; font-size: 11px; padding: 5px 11px; border-radius: 999px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+    color: var(--text-dim); cursor: pointer; font-family: inherit;
+  }
+  .quick:hover { color: var(--accent); border-color: rgba(56,189,248,0.3); }
+
+  .typing { display: inline-flex; gap: 3px; }
+  .typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); animation: blink 1.4s infinite; }
+  .typing span:nth-child(2){ animation-delay: .2s; } .typing span:nth-child(3){ animation-delay: .4s; }
+  @keyframes blink { 0%,60%,100%{opacity:.3} 30%{opacity:1} }
+
+  /* 视图层 (详情/案例/关于) */
+  .view { position: fixed; inset: 0; z-index: 40; display: none; overflow-y: auto;
+    background: rgba(5,7,15,0.92); backdrop-filter: blur(8px); }
+  .view.active { display: block; animation: fadeIn .3s; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .view-inner { max-width: 680px; margin: 0 auto; padding: 80px 24px 60px; }
+  .back-btn {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 13px; font-family: inherit; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .back-btn:hover { color: var(--accent); }
+  .view h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .view h2 { font-size: 18px; font-weight: 700; margin: 24px 0 10px; color: var(--accent); }
+  .view p { font-size: 14px; line-height: 1.7; color: var(--text-dim); margin-bottom: 12px; }
+
+  /* 详情时间轴 */
+  .timeline { margin: 20px 0; }
+  .tl-item { display: flex; gap: 14px; }
+  .tl-rail { display: flex; flex-direction: column; align-items: center; }
+  .tl-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(56,189,248,0.15); flex-shrink: 0; margin-top: 4px; }
+  .tl-line { width: 2px; flex: 1; min-height: 36px; background: var(--glass-border); }
+  .tl-body { flex: 1; padding-bottom: 20px; }
+  .tl-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .tl-sub { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .tl-price { font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+
+  /* 案例卡 */
+  .case-card {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+    border-radius: 14px; padding: 16px 18px; margin-bottom: 12px;
+    display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+    transition: all .2s;
+  }
+  .case-card:hover { border-color: rgba(56,189,248,0.3); background: rgba(56,189,248,0.04); }
+  .case-from { font-size: 15px; font-weight: 600; }
+  .case-method { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .case-vs { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+  .case-save { text-align: right; }
+  .case-save .v { font-size: 20px; font-weight: 800; color: var(--save); }
+  .case-save .p { font-size: 11px; color: var(--save); }
+  .case-verify { font-size: 10px; }
+
+  .spin { width: 22px; height: 22px; border: 2px solid var(--glass-border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 30px auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 提示文字 */
+  .hint-bar {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 25;
+    font-size: 11px; color: var(--text-faint);
+    background: rgba(5,7,15,0.5); padding: 6px 14px; border-radius: 999px;
+    border: 1px solid var(--glass-border);
+  }
+  @media (max-width: 640px) {
+    #panel { width: calc(100% - 32px); left: 16px; right: 16px; }
+    #results-box { width: calc(100% - 32px); left: 16px; right: 16px; }
+    .hint-bar { display: none; }
+  }
 </style>
 </head>
-<body class="bg-gradient-to-br from-white via-[#faf9f3] to-[#f0fdf4] text-on-surface min-h-screen flex flex-col relative overflow-x-hidden">
+<body>
+<div id="stars"></div>
+<div id="globe-wrap"><canvas id="globe-canvas"></canvas></div>
 
-<!-- 3D 地球画布 (左侧, 不超屏, 可拖拽缩放) -->
-<div id="globe-wrap" class="fixed z-0 pointer-events-auto" style="left:-8%;top:50%;transform:translateY(-50%);width:78vw;height:78vw;max-width:1100px;max-height:1100px">
-  <canvas id="globe-canvas" class="w-full h-full"></canvas>
-</div>
-
-<!-- 顶部导航 -->
-<nav class="fixed top-0 w-full z-50 glass-nav h-16 flex justify-between items-center px-5 md:px-10">
-  <span class="font-bold text-xl text-[#006e2f] cursor-pointer" onclick="showView('home')">🧠 魔法大脑</span>
-  <div class="hidden md:flex gap-8">
-    <a class="text-on-surface-variant font-medium hover:text-[#006e2f] transition-colors cursor-pointer" onclick="showView('cases')">省钱案例</a>
-    <a class="text-on-surface-variant font-medium hover:text-[#006e2f] transition-colors cursor-pointer" onclick="showView('about')">关于</a>
+<nav>
+  <div class="logo">🧠 魔法<b>大脑</b></div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="showView('cases')">省钱案例</button>
+    <button class="nav-link" onclick="showView('about')">关于</button>
   </div>
-  <span class="text-xs text-on-surface-variant bg-white/60 px-3 py-1.5 rounded-full border border-white/70">GOAI · Track 02</span>
+  <span class="badge">GOAI · Track 02</span>
 </nav>
 
-<!-- ============ 主视图: 首页 ============ -->
-<div id="view-home" class="view active relative z-10">
-  <div id="home-search-box" class="fixed top-20 left-4 md:left-10 z-20 w-[calc(100%-2rem)] md:w-[400px]">
-      <div class="absolute -inset-4 bg-white/30 blur-3xl rounded-[2.5rem] z-0 pointer-events-none"></div>
-      <div class="glass-card rounded-[24px] relative z-10 flex flex-col overflow-hidden" style="max-height:calc(100vh - 120px)">
-        <!-- Tab 切换 -->
-        <div class="flex items-center p-2 gap-2 border-b border-white/60 bg-white/30 shrink-0">
-          <button id="tab-search" class="tab-btn active flex-1 py-2.5 px-4 text-center rounded-xl font-semibold text-sm" onclick="switchTab('search')">✈️ 魔法搜索</button>
-          <button id="tab-ai" class="tab-btn flex-1 py-2.5 px-4 text-center rounded-xl font-semibold text-sm text-on-surface-variant hover:text-[#006e2f]" onclick="switchTab('ai')">🤖 AI 辅助购票</button>
-        </div>
-
-        <!-- 面板1: 搜索 -->
-        <div id="panel-search" class="tab-panel active flex-1 overflow-y-auto p-5 md:p-6 flex-col">
-          <h2 class="font-bold text-2xl mb-1 tracking-tight">去哪儿, 更省钱?</h2>
-          <p class="text-sm text-on-surface-variant mb-5">输入起终点, 发现隐藏的中转套利路线</p>
-          <div class="space-y-4">
-            <div class="grid grid-cols-1 gap-3">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-on-surface-variant">始发地</label>
-                <div class="relative">
-                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">flight_takeoff</span>
-                  <select id="origin" class="glass-input w-full rounded-xl py-3 pl-10 pr-4 text-base"></select>
-                </div>
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="text-xs font-medium text-on-surface-variant">目的地</label>
-                <div class="relative">
-                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">flight_land</span>
-                  <select id="destination" class="glass-input w-full rounded-xl py-3 pl-10 pr-4 text-base"></select>
-                </div>
-              </div>
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-on-surface-variant">偏好设置</label>
-              <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">tune</span>
-                <select id="weight" class="glass-input w-full rounded-xl py-3 pl-10 pr-10 text-base cursor-pointer appearance-none">
-                  <option value="price">省钱优先</option>
-                  <option value="balanced">均衡</option>
-                  <option value="time">时间优先</option>
-                </select>
-                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70 pointer-events-none" style="font-size:20px">expand_more</span>
-              </div>
-            </div>
-            <button onclick="doSearch()" id="btnSearch" class="w-full bg-[#22c55e] text-white font-bold text-lg py-4 rounded-xl hover:opacity-95 transition-all green-glow border-t border-white/40">✨ 魔法搜索</button>
-          </div>
-          <div id="search-results" class="mt-5 hidden"></div>
-        </div>
-
-        <!-- 面板2: AI -->
-        <div id="panel-ai" class="tab-panel flex-1 overflow-hidden p-4 md:p-6 flex-col">
-          <div id="chat-log" class="flex-1 overflow-y-auto flex flex-col gap-3 hide-scrollbar"></div>
-          <div class="border-t border-white/60 bg-white/40 backdrop-blur-md pt-3 -mx-4 md:-mx-6 px-4 md:px-6 pb-1 shrink-0">
-            <div class="relative flex items-center">
-              <input id="ai-input" class="glass-input w-full rounded-full py-3 pl-4 pr-14 text-base outline-none" placeholder="问问魔法大脑..." onkeydown="if(event.key==='Enter')sendAI()"/>
-              <button onclick="sendAI()" class="absolute right-2 w-9 h-9 flex items-center justify-center rounded-full bg-[#22c55e] text-white hover:opacity-90 transition-opacity border-t border-white/70 shadow-sm">
-                <span class="material-symbols-outlined" style="font-size:18px">send</span>
-              </button>
-            </div>
-            <div class="flex gap-2 mt-2.5 overflow-x-auto pb-1 hide-scrollbar">
-              <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('下周三晚去香港，便宜点')">下周三晚去香港</button>
-              <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('从北京到香港怎么省')">北京到香港怎么省</button>
-              <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('去澳门便宜的走法')">去澳门便宜的走法</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="flex gap-2 mt-4 flex-wrap">
-        <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🌱 多模态套利</span>
-        <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🚄 空铁联运</span>
-      </div>
+<!-- 左上主浮窗 -->
+<div id="panel" class="glass">
+  <div class="tab-bar">
+    <button class="tab-btn active" id="t-search" onclick="switchTab('search')">✈️ 搜索</button>
+    <button class="tab-btn" id="t-ai" onclick="switchTab('ai')">🤖 AI 对话</button>
   </div>
-</div>
 
-<!-- ============ 视图: 路线详情 ============ -->
-<div id="view-detail" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10 min-h-screen" style="background:rgba(250,249,243,0.92)">
-  <div class="w-full max-w-3xl mx-auto" id="detail-content"></div>
-</div>
-
-<!-- ============ 视图: 省钱案例 ============ -->
-<div id="view-cases" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10 min-h-screen" style="background:rgba(250,249,243,0.92)">
-  <div class="w-full max-w-4xl mx-auto" id="cases-content"></div>
-</div>
-
-<!-- ============ 视图: 关于 ============ -->
-<div id="view-about" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10 min-h-screen" style="background:rgba(250,249,243,0.92)">
-  <div class="w-full max-w-2xl mx-auto glass-card rounded-[24px] p-8 md:p-10">
-    <h1 class="text-3xl font-extrabold mb-3 text-[#006e2f]">关于魔法大脑</h1>
-    <p class="text-on-surface-variant mb-6 leading-relaxed">一个把"人肉摸索省钱路线"能力做成自动化 AI 搜索引擎的产品。参赛 GOAI Global Open-source AI Challenge · Track 02 Boundless Agents。</p>
-    <div class="space-y-4">
-      <div><h3 class="font-bold text-lg mb-1">💡 故事</h3><p class="text-sm text-on-surface-variant">从上海去香港，高铁直达 ¥966。但坐 D941 动卧到深圳（¥507）再过关到香港（¥60），全程只要 ¥567 —— 省 ¥399 (41%)，还能在卧铺睡一觉。</p></div>
-      <div><h3 class="font-bold text-lg mb-1">🎯 核心洞察</h3><p class="text-sm text-on-surface-variant">导航 App 只做"最快路径"，OTA 只卖"直达库存"，没人做"多模态中转套利"。</p></div>
-      <div><h3 class="font-bold text-lg mb-1">🛠️ 技术</h3><p class="text-sm text-on-surface-variant">多模态交通图 + 多目标 Dijkstra + GLM-4.5 意图解析。纯 Python 标准库引擎 + FastAPI + Three.js 3D 地球。</p></div>
+  <!-- 搜索面板 -->
+  <div class="tab-pane active" id="pane-search">
+    <div class="panel-title">去哪儿，更省钱？</div>
+    <div class="panel-sub">多模态套利搜索 · 发现隐藏的中转路线</div>
+    <div class="field">
+      <label>始发地</label>
+      <select class="select" id="origin"></select>
     </div>
-    <button onclick="showView('home')" class="mt-8 bg-[#22c55e] text-white font-semibold py-3 px-6 rounded-xl hover:opacity-95 transition-opacity green-glow">← 返回首页</button>
+    <div class="field">
+      <label>目的地</label>
+      <select class="select" id="destination"></select>
+    </div>
+    <div class="field">
+      <label>偏好</label>
+      <select class="select" id="weight">
+        <option value="price">省钱优先</option>
+        <option value="balanced">均衡</option>
+        <option value="time">时间优先</option>
+      </select>
+    </div>
+    <button class="btn-primary" id="btnSearch" onclick="doSearch()">✨ 魔法搜索</button>
+  </div>
+
+  <!-- AI 面板 -->
+  <div class="tab-pane" id="pane-ai">
+    <div class="panel-title">AI 辅助购票</div>
+    <div class="panel-sub">用自然语言告诉我你的行程</div>
+    <div id="chat-log"></div>
+    <div class="chat-input-wrap">
+      <div class="chat-input-row">
+        <input class="chat-input" id="ai-input" placeholder="如：下周三晚去香港，便宜点" onkeydown="if(event.key==='Enter')sendAI()"/>
+        <button class="send-btn" onclick="sendAI()">↑</button>
+      </div>
+      <div class="quick-row">
+        <button class="quick" onclick="quickAsk('下周三晚下班去香港，便宜点')">下周三晚去香港</button>
+        <button class="quick" onclick="quickAsk('从北京到香港怎么省')">北京到香港</button>
+        <button class="quick" onclick="quickAsk('去澳门便宜的走法')">去澳门</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<footer class="w-full py-8 px-8 flex flex-col md:flex-row justify-between items-center gap-3 glass-nav relative z-20">
-  <div class="font-bold text-[#006e2f] cursor-pointer" onclick="showView('home')">🧠 魔法大脑</div>
-  <div class="text-xs text-on-surface-variant">GOAI Challenge · 让每一程更省</div>
-</footer>
+<!-- 结果浮窗 -->
+<div id="results-box" class="glass">
+  <div class="results-head">
+    <span style="font-size:13px;font-weight:600">搜索结果</span>
+    <button class="close-btn" onclick="closeResults()">×</button>
+  </div>
+  <div class="results-body" id="results-body"></div>
+</div>
+
+<div class="hint-bar">拖拽地球旋转 · 滚轮缩放</div>
+
+<!-- 详情视图 -->
+<div class="view" id="view-detail"><div class="view-inner" id="detail-inner"></div></div>
+<!-- 案例视图 -->
+<div class="view" id="view-cases"><div class="view-inner" id="cases-inner"></div></div>
+<!-- 关于视图 -->
+<div class="view" id="view-about">
+  <div class="view-inner">
+    <button class="back-btn" onclick="showView('home')">← 返回</button>
+    <h1>关于魔法大脑</h1>
+    <p>把"人肉摸索省钱路线"的能力，做成自动化 AI 搜索引擎。参赛 GOAI Global Open-source AI Challenge · Track 02 Boundless Agents。</p>
+    <h2>💡 故事</h2>
+    <p>从上海去香港，高铁直达 ¥966。但坐 D941 动卧到深圳（¥507）再走罗湖过关 + 港铁到尖沙咀（¥60），全程只要 ¥567 —— 省 ¥399（41%），还能在卧铺睡一觉省一晚酒店。</p>
+    <h2>🎯 洞察</h2>
+    <p>导航 App 只做"最快路径"，OTA 只卖"直达库存"，没人做"多模态中转套利"。这是魔法大脑的位置。</p>
+    <h2>🛠️ 技术</h2>
+    <p>多模态交通图 + 多目标 Dijkstra + GLM-4.5 意图解析。纯 Python 标准库引擎 + FastAPI + Three.js 3D 地球，真实地理路径绘制。</p>
+  </div>
+</div>
 
 <script>
-let CITIES = {}, PAIRS = [], lastSearchData = null, GEO = {cities:{}, waypoints:{}};
+let CITIES={}, PAIRS=[], GEO={cities:{},waypoints:{}}, lastData=null;
 
-async function init() {
-  const res = await fetch('/api/cities');
-  const data = await res.json();
-  CITIES = data.cities;
-  PAIRS = data.queryable_pairs;
-  const oSel = document.getElementById('origin');
-  const dSel = document.getElementById('destination');
-  Object.entries(CITIES).forEach(([code, c]) => {
-    oSel.add(new Option(c.name, code));
-    dSel.add(new Option(c.name, code));
-  });
-  oSel.value = 'SHA'; dSel.value = 'HKG';
-  // 加载经纬度
+async function init(){
+  const r = await fetch('/api/cities'); const d = await r.json();
+  CITIES=d.cities; PAIRS=d.queryable_pairs;
+  const o=document.getElementById('origin'), de=document.getElementById('destination');
+  Object.entries(CITIES).forEach(([k,c])=>{ o.add(new Option(c.name,k)); de.add(new Option(c.name,k)); });
+  o.value='SHA'; de.value='HKG';
+  try { const g=await fetch('/api/geo'); GEO=await g.json(); } catch(e){}
+}
+
+function switchTab(n){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+n).classList.add('active');
+  document.getElementById('t-search').classList.toggle('active',n==='search');
+  document.getElementById('t-ai').classList.toggle('active',n==='ai');
+  if(n==='ai' && document.getElementById('chat-log').children.length===0)
+    addBot('你好！告诉我你想去哪、什么时候出发，我帮你找到最省钱的走法。');
+}
+
+async function doSearch(){
+  const o=document.getElementById('origin').value, d=document.getElementById('destination').value, w=document.getElementById('weight').value;
+  const box=document.getElementById('results-box'), body=document.getElementById('results-body'), btn=document.getElementById('btnSearch');
+  box.classList.add('show'); body.innerHTML='<div class="spin"></div>'; btn.disabled=true;
   try {
-    const gr = await fetch('/api/geo');
-    GEO = await gr.json();
-  } catch(e) { console.warn('geo data load failed', e); }
+    const r=await fetch(`/api/search?origin=${o}&destination=${d}&weight=${w}`); const data=await r.json();
+    if(data.error){ body.innerHTML=`<p style="color:var(--danger);font-size:13px;padding:20px 0">${data.error}</p>`; return; }
+    lastData=data; renderResults(data);
+    const wps=buildWaypoints(data,0); if(wps&&window.__drawRoute) window.__drawRoute(wps);
+  } catch(e){ body.innerHTML='<p style="color:var(--danger);font-size:13px;padding:20px 0">服务出错，请确认后端已启动</p>'; }
+  finally{ btn.disabled=false; }
 }
 
-// 构造路径航点 (用于地球画线)
-function buildWaypoints(data, pathIdx) {
-  const p = data.paths[pathIdx];
-  const oCode = data.origin, dCode = data.destination;
-  // 找该起终点的预置航点集
-  const wkey = Object.keys(GEO.waypoints || {}).find(k => k.startsWith(oCode+'-'+dCode));
-  if (wkey) {
-    // 用预置真实航点, 标注每段交通方式 (用于贴地/抬高)
-    const wps = GEO.waypoints[wkey].map(w => ({...w}));
-    // 简单: 第一段若是 flight 就抬高, 否则贴地
-    if (p.segments[0] && p.segments[0].mode === 'flight') wps.forEach(w => w.type = 'flight');
-    return wps;
+function renderResults(data){
+  const body=document.getElementById('results-body');
+  const best=data.savings.filter(s=>s.savings_price>0).sort((a,b)=>b.savings_price-a.savings_price)[0];
+  let h='';
+  if(best){
+    const fast=best.time_cost_min<0?' · 还更快':'';
+    h+=`<div class="save-hero"><div class="lbl">🎉 你能省</div><div class="amt">¥${Math.round(best.savings_price)}</div><div class="ratio">${Math.round(best.savings_ratio*100)}% ↓${fast}</div><div class="vs">比 ${best.benchmark_name}</div></div>`;
   }
-  // 无预置: 用起终点直连 (兜底)
-  const o = GEO.cities[oCode], d = GEO.cities[dCode];
-  if (o && d) return [{...o, type: p.segments[0]?.mode==='flight'?'flight':'train'}, {...d, type:'train'}];
-  return null;
-}
-
-// === 视图切换 ===
-function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  // 搜索框仅首页显示 (fixed 定位不受父 display 影响, 需手动控制)
-  const homeBox = document.getElementById('home-search-box');
-  if (homeBox) homeBox.style.display = (name === 'home') ? '' : 'none';
-  window.scrollTo(0, 0);
-}
-
-// === Tab 切换 ===
-function switchTab(name) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + name).classList.add('active');
-  document.getElementById('tab-search').classList.toggle('active', name === 'search');
-  document.getElementById('tab-ai').classList.toggle('active', name === 'ai');
-  document.getElementById('tab-search').classList.toggle('text-on-surface-variant', name !== 'search');
-  document.getElementById('tab-ai').classList.toggle('text-on-surface-variant', name !== 'ai');
-  if (name === 'ai' && document.getElementById('chat-log').children.length === 0) {
-    addBotMsg('你好！告诉我你想去哪，什么时候出发，我帮你找到最省钱的走法。');
-  }
-}
-
-// === 搜索 ===
-async function doSearch() {
-  const o = document.getElementById('origin').value;
-  const d = document.getElementById('destination').value;
-  const w = document.getElementById('weight').value;
-  if (!o || !d) return;
-  const results = document.getElementById('search-results');
-  const btn = document.getElementById('btnSearch');
-  results.classList.remove('hidden');
-  results.innerHTML = `<div class="text-center py-6 text-on-surface-variant text-sm"><div class="inline-block w-8 h-8 border-[3px] border-[#bbf7d0] border-t-[#22c55e] rounded-full animate-spin"></div><div class="mt-3">魔法搜索中...</div></div>`;
-  btn.disabled = true;
-  try {
-    const res = await fetch(`/api/search?origin=${o}&destination=${d}&weight=${w}`);
-    const data = await res.json();
-    if (data.error) { results.innerHTML = `<div class="text-center py-4 text-sm text-red-500">${data.error}</div>`; return; }
-    lastSearchData = data;
-    renderSearchResults(data);
-    // 在地球上画真实路径
-    const wps = buildWaypoints(data, 0);
-    if (wps && window.__drawRoute) window.__drawRoute(wps);
-  } catch (e) {
-    results.innerHTML = `<div class="text-center py-4 text-sm text-red-500">搜索出错, 请确认后端服务已启动</div>`;
-  } finally { btn.disabled = false; }
-}
-
-function renderSearchResults(data) {
-  const results = document.getElementById('search-results');
-  const best = data.savings.filter(s => s.savings_price > 0).sort((a,b)=>b.savings_price-a.savings_price)[0];
-  let html = '';
-  if (best) {
-    const faster = best.time_cost_min < 0 ? ' · 还更快' : '';
-    html += `<div class="pulse-save rounded-2xl p-4 text-white text-center" style="background:linear-gradient(135deg,#22c55e,#16a34a)">
-      <div class="text-xs opacity-90">🎉 你能省</div>
-      <div class="text-4xl font-extrabold leading-none my-1">¥${Math.round(best.savings_price)}</div>
-      <div class="text-sm opacity-95">(${Math.round(best.savings_ratio*100)}% ↓${faster})</div>
-      <div class="text-[11px] opacity-80 mt-1">比 ${best.benchmark_name} 便宜</div>
-    </div>`;
-  }
-  data.paths.forEach((p, i) => {
-    const isRec = i === 0 && p.total_price === Math.min(...data.paths.map(x=>x.total_price));
-    const segShort = p.segments.map(s => s.label.split(' ')[0]).join(' → ');
-    html += `<div class="bg-white/70 border border-white/80 rounded-xl p-3.5 mt-3 cursor-pointer hover:bg-white/90 transition-all ${isRec?'ring-2 ring-[#22c55e]/40':''}" onclick='openDetail(${i})'>
-      <div class="flex justify-between items-start">
-        <div>
-          <div class="font-semibold text-sm">${isRec?'⭐ ':''}${segShort}</div>
-          <div class="text-2xl font-extrabold text-[#006e2f]">¥${Math.round(p.total_price)}</div>
-        </div>
-        <div class="text-right text-xs text-on-surface-variant">
-          <div class="text-sm font-medium text-on-surface">${p.duration_text}</div>
-          <div>${p.transfers}次换乘</div>
-        </div>
+  data.paths.forEach((p,i)=>{
+    const rec=i===0&&p.total_price===Math.min(...data.paths.map(x=>x.total_price));
+    const name=p.segments.map(s=>s.label.split(' ')[0]).join(' → ');
+    h+=`<div class="route ${rec?'rec':''}" onclick="openDetail(${i})">
+      <div class="route-top">
+        <div><div class="route-name">${rec?'⭐ ':''}${name}</div><div class="route-price">¥${Math.round(p.total_price)}</div></div>
+        <div class="route-meta"><span class="dur">${p.duration_text}</span>${p.transfers}次换乘</div>
       </div>
-      <div class="mt-2 text-xs text-[#006e2f] font-medium">查看路线详情 →</div>
+      ${rec?'<span class="pill pill-green">推荐</span>':''}<span class="pill pill-cyan">${p.duration_text}</span>
+      <div class="route-hint">查看路线详情 →</div>
     </div>`;
   });
-  if (data.baselines.length) {
-    html += `<div class="mt-4"><div class="text-xs font-medium text-on-surface-variant mb-2">直达基准对比</div>`;
-    data.baselines.forEach(b => {
-      const t = b.type === 'flight_direct' ? '✈️ 飞机直达' : '🚄 高铁直达';
-      html += `<div class="bg-white/50 border border-white/60 rounded-lg px-3 py-2 mb-1.5 flex justify-between items-center"><span class="text-sm">${t}</span><span class="font-bold text-on-surface-variant line-through decoration-[#22c55e] decoration-2">¥${Math.round(b.price)}</span></div>`;
+  if(data.baselines.length){
+    h+='<div class="base-list"><div class="base-title">直达基准</div>';
+    data.baselines.forEach(b=>{
+      const t=b.type==='flight_direct'?'✈️ 飞机直达':'🚄 高铁直达';
+      h+=`<div class="base-row"><span>${t}</span><span class="base-price">¥${Math.round(b.price)}</span></div>`;
     });
-    html += `</div>`;
+    h+='</div>';
   }
-  results.innerHTML = html;
+  body.innerHTML=h;
 }
 
-// === 路线详情视图 ===
-function openDetail(pathIdx) {
-  if (!lastSearchData) return;
-  const p = lastSearchData.paths[pathIdx];
-  const oName = CITIES[lastSearchData.origin]?.name || lastSearchData.origin;
-  const dName = CITIES[lastSearchData.destination]?.name || lastSearchData.destination;
-  const best = lastSearchData.savings.filter(s=>s.savings_price>0).sort((a,b)=>b.savings_price-a.savings_price)[0];
-  let segIdx = 0;
-  const totalSegs = p.segments.length;
-  let timelineHtml = '';
-  p.segments.forEach((s, i) => {
-    const isFirst = i === 0, isLast = i === totalSegs - 1;
-    const lineColor = isLast ? 'transparent' : '#bbf7d0';
-    timelineHtml += `<div class="flex gap-4">
-      <div class="flex flex-col items-center">
-        <div class="timeline-dot w-3.5 h-3.5 rounded-full bg-[#22c55e] mt-1.5"></div>
-        <div class="w-0.5 flex-1 min-h-[40px]" style="background:${lineColor}"></div>
-      </div>
-      <div class="flex-1 pb-6">
-        <div class="flex items-center gap-2 mb-1">
-          <span class="text-lg">${modeIcon(s.mode)}</span>
-          <span class="font-bold text-base">${s.label.split(' ')[0]||s.label}</span>
-          <span class="text-xs text-on-surface-variant bg-[#f0fdf4] px-2 py-0.5 rounded-full">${durTxt(s.duration_min)}</span>
-        </div>
-        <div class="text-sm text-on-surface-variant">${s.label}</div>
-        ${s.depart ? `<div class="text-xs text-on-surface-variant mt-1">⏰ ${s.depart} 出发</div>` : ''}
-        <div class="text-sm font-semibold text-[#006e2f] mt-1">¥${Math.round(s.price)}</div>
-      </div>
-    </div>`;
-  });
+function closeResults(){ document.getElementById('results-box').classList.remove('show'); }
 
-  document.getElementById('detail-content').innerHTML = `
-    <button onclick="showView('home')" class="mb-4 text-sm text-on-surface-variant hover:text-[#006e2f] flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>返回</button>
-    <div class="glass-card rounded-[24px] p-6 md:p-8">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <h1 class="text-2xl font-extrabold">${oName} → ${dName}</h1>
-          <p class="text-sm text-on-surface-variant mt-1">${p.segments.length}段路 · ${p.transfers}次换乘 · ${p.duration_text}</p>
-        </div>
-        <div class="text-right">
-          <div class="text-3xl font-extrabold text-[#006e2f]">¥${Math.round(p.total_price)}</div>
-          ${best ? `<div class="text-xs bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-full mt-1 font-medium">省 ¥${Math.round(best.savings_price)}</div>` : ''}
-        </div>
-      </div>
-      ${best ? `<div class="rounded-xl p-3 mb-5 text-sm" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#166534">🎉 这条路线比 ${best.benchmark_name}(¥${Math.round(best.benchmark_price)}) 省 ¥${Math.round(best.savings_price)} (${Math.round(best.savings_ratio*100)}%)</div>` : ''}
-      <h3 class="font-bold text-lg mb-4">📍 路线时间轴</h3>
-      <div>${timelineHtml}</div>
-      <div class="mt-6 pt-6 border-t border-gray-100 flex gap-3">
-        <button onclick="showView('home')" class="flex-1 py-3 rounded-xl border border-[#22c55e]/30 text-[#006e2f] font-semibold hover:bg-[#22c55e]/5">再搜其他路线</button>
-        <button onclick="alert('订票跳转功能开发中，当前为 demo')" class="flex-1 py-3 rounded-xl bg-[#22c55e] text-white font-semibold hover:opacity-95 green-glow">去订票 →</button>
-      </div>
-    </div>`;
+function openDetail(idx){
+  if(!lastData) return;
+  const p=lastData.paths[idx];
+  const oN=CITIES[lastData.origin]?.name||lastData.origin, dN=CITIES[lastData.destination]?.name||lastData.destination;
+  const best=lastData.savings.filter(s=>s.savings_price>0).sort((a,b)=>b.savings_price-a.savings_price)[0];
+  let tl='';
+  p.segments.forEach((s,i)=>{
+    const last=i===p.segments.length-1;
+    tl+=`<div class="tl-item"><div class="tl-rail"><div class="tl-dot"></div>${last?'':'<div class="tl-line"></div>'}</div>
+      <div class="tl-body"><div class="tl-title">${modeIcon(s.mode)} ${s.label.split(' ')[0]||s.label}</div>
+      <div class="tl-sub">${s.label}${s.depart?' · ⏰ '+s.depart:''}</div>
+      <div class="tl-price">¥${Math.round(s.price)} · ${durTxt(s.duration_min)}</div></div></div>`;
+  });
+  document.getElementById('detail-inner').innerHTML=`
+    <button class="back-btn" onclick="showView('home')">← 返回</button>
+    <h1>${oN} → ${dN}</h1>
+    <p>${p.segments.length}段 · ${p.transfers}次换乘 · ${p.duration_text} · <b style="color:var(--accent)">¥${Math.round(p.total_price)}</b>
+    ${best?` · <b style="color:var(--save)">省¥${Math.round(best.savings_price)}</b>`:''}</p>
+    ${best?`<div class="save-hero"><div class="lbl">比 ${best.benchmark_name} (¥${Math.round(best.benchmark_price)})</div><div class="amt">省 ¥${Math.round(best.savings_price)}</div><div class="ratio">${Math.round(best.savings_ratio*100)}% ↓</div></div>`:''}
+    <h2>📍 路线时间轴</h2><div class="timeline">${tl}</div>`;
   showView('detail');
 }
 
-// === 省钱案例视图 ===
-function renderCases() {
-  const samples = [
-    {from:'上海', to:'香港', save:399, pct:41, method:'D941动卧经深圳过关', vs:'高铁直达¥966', verified:true},
-    {from:'北京', to:'香港', save:560, pct:47, method:'D901动卧经深圳过关', vs:'高铁直达¥1180', verified:false},
-    {from:'上海', to:'三亚', save:500, pct:45, method:'飞海口+环岛高铁', vs:'直飞¥1100', verified:false},
-    {from:'上海', to:'澳门', save:414, pct:46, method:'飞珠海+拱北过关', vs:'直飞¥900', verified:false},
-    {from:'广州', to:'香港', save:75, pct:35, method:'广深城铁+港铁', vs:'广深港高铁¥215', verified:false},
+function renderCases(){
+  const s=[
+    {f:'上海',t:'香港',v:399,p:41,m:'D941动卧经深圳过关',vs:'高铁直达¥966',ok:true},
+    {f:'北京',t:'香港',v:560,p:47,m:'D901动卧经深圳过关',vs:'高铁直达¥1180',ok:false},
+    {f:'上海',t:'三亚',v:500,p:45,m:'飞海口+环岛高铁',vs:'直飞¥1100',ok:false},
+    {f:'上海',t:'澳门',v:414,p:46,m:'飞珠海+拱北过关',vs:'直飞¥900',ok:false},
+    {f:'广州',t:'香港',v:75,p:35,m:'广深城铁+港铁',vs:'广深港高铁¥215',ok:false},
   ];
-  let html = `<h1 class="text-3xl font-extrabold mb-2 text-[#006e2f]">💰 省钱案例</h1>
-    <p class="text-on-surface-variant mb-6">真实与推断的套利案例汇总。<span class="text-xs">✅=真实核实 · ⏳=待核实</span></p>
-    <div class="grid gap-4">`;
-  samples.forEach(c => {
-    html += `<div class="glass-card rounded-2xl p-5 flex justify-between items-center cursor-pointer hover:scale-[1.01] transition-transform" onclick="showView('home')">
-      <div>
-        <div class="font-bold text-lg">${c.from} → ${c.to} ${c.verified?'<span class="text-xs text-[#166534]">✅</span>':'<span class="text-xs text-on-surface-variant">⏳</span>'}</div>
-        <div class="text-sm text-on-surface-variant mt-0.5">${c.method}</div>
-        <div class="text-xs text-on-surface-variant mt-1">对比: ${c.vs}</div>
-      </div>
-      <div class="text-right">
-        <div class="text-2xl font-extrabold text-[#006e2f]">省¥${c.save}</div>
-        <div class="text-xs text-[#166534]">${c.pct}% ↓</div>
-      </div>
-    </div>`;
-  });
-  html += `</div><button onclick="showView('home')" class="mt-6 bg-[#22c55e] text-white font-semibold py-3 px-6 rounded-xl hover:opacity-95 green-glow">← 返回首页</button>`;
-  document.getElementById('cases-content').innerHTML = html;
+  let h='<button class="back-btn" onclick="showView(\'home\')">← 返回</button><h1>💰 省钱案例</h1><p>真实与推断的套利案例。✅真实核实 · ⏳待核实</p>';
+  s.forEach(c=>{ h+=`<div class="case-card" onclick="showView('home')">
+    <div><div class="case-from">${c.f} → ${c.t} <span class="case-verify">${c.ok?'✅':'⏳'}</span></div>
+    <div class="case-method">${c.m}</div><div class="case-vs">对比：${c.vs}</div></div>
+    <div class="case-save"><div class="v">省¥${c.v}</div><div class="p">${c.p}% ↓</div></div></div>`; });
+  document.getElementById('cases-inner').innerHTML=h;
 }
 
-// === AI 聊天 ===
-function addBotMsg(html) {
-  const log = document.getElementById('chat-log');
-  const div = document.createElement('div');
-  div.className = 'msg flex gap-2 max-w-[90%]';
-  div.innerHTML = `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white border border-gray-100 text-[#006e2f] shadow-sm"><span class="material-symbols-outlined" style="font-size:18px">smart_toy</span></div><div class="bg-white/90 rounded-2xl rounded-tl-sm p-3.5 shadow-sm border border-gray-100 text-sm leading-relaxed">${html}</div>`;
-  log.appendChild(div); log.scrollTop = log.scrollHeight;
+function showView(n){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  if(n!=='home') document.getElementById('view-'+n).classList.add('active');
 }
-function addUserMsg(text) {
-  const log = document.getElementById('chat-log');
-  const div = document.createElement('div');
-  div.className = 'msg flex gap-2 max-w-[90%] self-end flex-row-reverse';
-  div.innerHTML = `<div class="w-8 h-8 rounded-full bg-gray-100 border border-white/50 flex items-center justify-center shrink-0 text-gray-500"><span class="material-symbols-outlined" style="font-size:18px">person</span></div><div class="bg-[#22c55e] text-white rounded-2xl rounded-tr-sm p-3.5 shadow-sm text-sm">${text}</div>`;
-  log.appendChild(div); log.scrollTop = log.scrollHeight;
-}
-function showTyping() {
-  const log = document.getElementById('chat-log');
-  const div = document.createElement('div');
-  div.id = 'typing-indicator';
-  div.className = 'flex gap-2 max-w-[90%]';
-  div.innerHTML = `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white border border-gray-100 text-[#006e2f] shadow-sm"><span class="material-symbols-outlined" style="font-size:18px">smart_toy</span></div><div class="bg-white/90 rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100 typing text-on-surface-variant"><span>●</span><span>●</span><span>●</span></div>`;
-  log.appendChild(div); log.scrollTop = log.scrollHeight;
-}
-function hideTyping() { const t = document.getElementById('typing-indicator'); if (t) t.remove(); }
-function quickAsk(q) { document.getElementById('ai-input').value = q; sendAI(); }
 
-async function sendAI() {
-  const input = document.getElementById('ai-input');
-  const text = input.value.trim();
-  if (!text) return;
-  addUserMsg(text); input.value = ''; showTyping();
-  try {
-    const res = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:text})});
-    const data = await res.json();
-    hideTyping(); addBotMsg(data.reply);
-    if (data.route) {
-      const r = data.route;
-      // 在地球上画路径
-      const oC = r.origin_code, dC = r.dest_code;
-      const wkey = Object.keys(GEO.waypoints||{}).find(k => k.startsWith(oC+'-'+dC));
-      let wps = null;
-      if (wkey) wps = GEO.waypoints[wkey].map(w=>({...w}));
-      else if (GEO.cities[oC] && GEO.cities[dC]) wps = [{...GEO.cities[oC]}, {...GEO.cities[dC]}];
-      if (wps && window.__drawRoute) window.__drawRoute(wps);
-      addBotMsg(`<div class="bg-[#f0fdf4]/60 rounded-xl p-3 border border-[#bbf7d0] mt-1">
-        <div class="flex justify-between items-center mb-2"><span class="text-xs font-semibold text-[#006e2f]">🛏️ ${r.title}</span><span class="text-xs text-white bg-[#22c55e] px-2 py-0.5 rounded-full">省 ¥${r.savings}</span></div>
-        <div class="flex justify-between items-center">
-          <div class="text-center"><div class="font-bold text-base">${r.dept}</div><div class="text-[11px] text-gray-500">${r.dept_name}</div></div>
-          <div class="flex-1 flex items-center px-2"><div class="h-0.5 w-full bg-[#22c55e] relative"></div><span class="material-symbols-outlined absolute text-[#22c55e]" style="font-size:16px">arrow_forward_ios</span></div>
-          <div class="text-center"><div class="font-bold text-base">${r.arr}</div><div class="text-[11px] text-gray-500">${r.arr_name}</div></div>
-        </div>
-        <div class="mt-2 text-center font-bold text-[#006e2f]">¥${r.price} · ${r.duration}</div>
-        <button onclick="switchTab('search');setTimeout(doSearch,300)" class="w-full mt-2 py-2 rounded-lg border border-[#22c55e]/30 text-[#006e2f] font-semibold text-sm hover:bg-[#22c55e]/5">查看完整详情 →</button>
-      </div>`);
+// AI chat
+function addBot(html){ const l=document.getElementById('chat-log'); const d=document.createElement('div'); d.className='msg bot'; d.innerHTML=`<div class="bubble">${html}</div>`; l.appendChild(d); l.scrollTop=l.scrollHeight; }
+function addUser(t){ const l=document.getElementById('chat-log'); const d=document.createElement('div'); d.className='msg user'; d.innerHTML=`<div class="bubble">${t}</div>`; l.appendChild(d); l.scrollTop=l.scrollHeight; }
+function showTyping(){ const l=document.getElementById('chat-log'); const d=document.createElement('div'); d.id='typing'; d.className='msg bot'; d.innerHTML='<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>'; l.appendChild(d); l.scrollTop=l.scrollHeight; }
+function hideTyping(){ const t=document.getElementById('typing'); if(t)t.remove(); }
+function quickAsk(q){ document.getElementById('ai-input').value=q; sendAI(); }
+async function sendAI(){
+  const inp=document.getElementById('ai-input'); const t=inp.value.trim(); if(!t)return;
+  addUser(t); inp.value=''; showTyping();
+  try{
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})});
+    const d=await r.json(); hideTyping(); addBot(d.reply);
+    if(d.route){ const x=d.route;
+      addBot(`<div class="chat-card"><div class="cc-top"><span>🛏️ ${x.title}</span><span class="cc-save">省 ¥${x.savings}</span></div>
+        <div class="cc-line"><span class="cc-dot">${x.dept}</span><span class="cc-dot">→</span><span class="cc-dot">${x.arr}</span></div>
+        <div class="cc-line" style="margin-top:4px"><span>${x.dept_name}</span><div class="cc-arrow"></div><span>${x.arr_name}</span></div>
+        <div class="cc-total">¥${x.price} · ${x.duration}</div>
+        <button onclick="switchTab('search');setTimeout(doSearch,300)">查看完整详情 →</button></div>`);
+      const wkey=Object.keys(GEO.waypoints||{}).find(k=>k.startsWith(x.origin_code+'-'+x.dest_code));
+      let wps=wkey?GEO.waypoints[wkey].map(w=>({...w})):(GEO.cities[x.origin_code]&&GEO.cities[x.dest_code]?[{...GEO.cities[x.origin_code]},{...GEO.cities[x.dest_code]}]:null);
+      if(wps&&window.__drawRoute) window.__drawRoute(wps);
     }
-  } catch (e) { hideTyping(); addBotMsg('抱歉，服务暂时不可用，请先用「魔法搜索」体验省钱路线。'); }
+  }catch(e){ hideTyping(); addBot('服务暂时不可用，请先用搜索体验。'); }
 }
 
-function modeIcon(m) { return ({flight:'✈️',train_hsr:'🚄',train_sleeper:'🛏️',train_seat:'🚃',metro:'🚇',bus:'🚌',walk_border:'🚶',taxi:'🚕'})[m] || '•'; }
-function durTxt(min) { if(min<=0)return '0分'; const h=Math.floor(min/60),m=min%60; return (h?h+'小时':'')+(m?m+'分':''); }
+function buildWaypoints(data,idx){
+  const p=data.paths[idx], oc=data.origin, dc=data.destination;
+  const k=Object.keys(GEO.waypoints||{}).find(x=>x.startsWith(oc+'-'+dc));
+  if(k){ const w=GEO.waypoints[k].map(x=>({...x})); if(p.segments[0]&&p.segments[0].mode==='flight')w.forEach(x=>x.type='flight'); return w; }
+  const o=GEO.cities[oc],d=GEO.cities[dc]; if(o&&d)return[{...o,type:p.segments[0]?.mode==='flight'?'flight':'train'},{...d,type:'train'}]; return null;
+}
+function modeIcon(m){return{flight:'✈️',train_hsr:'🚄',train_sleeper:'🛏️',train_seat:'🚃',metro:'🚇',bus:'🚌',walk_border:'🚶',taxi:'🚕'}[m]||'•';}
+function durTxt(min){if(min<=0)return'0分';const h=Math.floor(min/60),m=min%60;return(h?h+'小时':'')+(m?m+'分':'');}
 
 init(); renderCases();
 </script>
 
-<!-- 3D 地球 (Three.js, UMD 全局 THREE) -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
-(function() {
-const THREE = window.THREE;
+(function(){
+const THREE=window.THREE;
+const canvas=document.getElementById('globe-canvas'), wrap=document.getElementById('globe-wrap');
+let W=wrap.clientWidth, H=wrap.clientHeight;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(40, W/H, 0.1, 1000);
+camera.position.set(0.6, 0.4, 3.0);
+const renderer=new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+renderer.setSize(W,H); renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 
-const canvas = document.getElementById('globe-canvas');
-const container = canvas.parentElement;
-let W = container.clientWidth, H = container.clientHeight;
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 1000);
-camera.position.z = 3.0;
-
-const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-renderer.setSize(W, H);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-// 地球
-const loader = new THREE.TextureLoader();
-loader.crossOrigin = 'anonymous';
-const earthGroup = new THREE.Group();
-scene.add(earthGroup);
-
-const RADIUS = 1;
-const sphereGeo = new THREE.SphereGeometry(RADIUS, 64, 64);
-const earthMat = new THREE.MeshPhongMaterial({
+const R=1;
+const earthGroup=new THREE.Group(); scene.add(earthGroup);
+const loader=new THREE.TextureLoader(); loader.crossOrigin='anonymous';
+const earth=new THREE.Mesh(new THREE.SphereGeometry(R,64,64), new THREE.MeshPhongMaterial({
   map: loader.load('https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg'),
   bumpMap: loader.load('https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png'),
-  bumpScale: 0.05, specular: new THREE.Color(0x111111), shininess: 8,
-});
-const earth = new THREE.Mesh(sphereGeo, earthMat);
+  bumpScale:0.05, specular:new THREE.Color(0x222233), shininess:10
+}));
 earthGroup.add(earth);
+const clouds=new THREE.Mesh(new THREE.SphereGeometry(R,64,64), new THREE.MeshPhongMaterial({
+  map: loader.load('https://unpkg.com/three-globe@2.31.0/example/img/earth-water.png'), transparent:true, opacity:0.3
+}));
+clouds.scale.setScalar(1.01); earthGroup.add(clouds);
+// 大气
+earthGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.18,64,64), new THREE.ShaderMaterial({
+  vertexShader:'varying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+  fragmentShader:'varying vec3 vN;void main(){float i=pow(0.7-dot(vN,vec3(0,0,1.0)),2.0);gl_FragColor=vec4(0.22,0.74,0.97,1.0)*i;}',
+  blending:THREE.AdditiveBlending, side:THREE.BackSide, transparent:true
+})));
+scene.add(new THREE.AmbientLight(0x6688aa, 0.7));
+const dl=new THREE.DirectionalLight(0xffffff,1.0); dl.position.set(5,3,5); scene.add(dl);
 
-// 云层
-const cloudMat = new THREE.MeshPhongMaterial({
-  map: loader.load('https://unpkg.com/three-globe@2.31.0/example/img/earth-water.png'),
-  transparent: true, opacity: 0.25,
-});
-const clouds = new THREE.Mesh(sphereGeo, cloudMat);
-clouds.scale.setScalar(1.01);
-earthGroup.add(clouds);
+earthGroup.rotation.y=-1.9; earthGroup.rotation.x=0.3;
 
-// 大气光晕
-const atmoGeo = new THREE.SphereGeometry(1.15, 64, 64);
-const atmoMat = new THREE.ShaderMaterial({
-  vertexShader: `varying vec3 vNormal; void main(){ vNormal = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-  fragmentShader: `varying vec3 vNormal; void main(){ float intensity = pow(0.65 - dot(vNormal, vec3(0,0,1.0)), 2.0); gl_FragColor = vec4(0.13,0.55,0.37,1.0)*intensity; }`,
-  blending: THREE.AdditiveBlending, side: THREE.BackSide, transparent: true,
-});
-earthGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
-
-// 光照
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
-dirLight.position.set(5, 3, 5);
-scene.add(dirLight);
-
-earthGroup.rotation.y = -1.9; // 让中国朝向观察者
-earthGroup.rotation.x = 0.3;
-
-// === 经纬度 -> 3D 坐标 ===
-function latLngToVec3(lat, lng, radius = RADIUS) {
-  const phi = (90 - lat) * Math.PI / 180;
-  const theta = (lng + 180) * Math.PI / 180;
-  return new THREE.Vector3(
-    -radius * Math.sin(phi) * Math.cos(theta),
-     radius * Math.cos(phi),
-     radius * Math.sin(phi) * Math.sin(theta)
-  );
+function latLngToVec3(lat,lng,radius=R){
+  const phi=(90-lat)*Math.PI/180, theta=(lng+180)*Math.PI/180;
+  return new THREE.Vector3(-radius*Math.sin(phi)*Math.cos(theta), radius*Math.cos(phi), radius*Math.sin(phi)*Math.sin(theta));
 }
-
-// === 大圆弧路径 (贴着地球表面, 多航点串接) ===
-function makeArc(a, b, segments = 40, lift = 0.0) {
-  // a, b: {lat,lng}. 用 slerp 在球面上插值 = 大圆弧 = 真实最短路径形状
-  const va = latLngToVec3(a.lat, a.lng, RADIUS).normalize();
-  const vb = latLngToVec3(b.lat, b.lng, RADIUS).normalize();
-  const angle = va.angleTo(vb);
-  const pts = [];
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const v = new THREE.Vector3().copy(va).lerp(vb, t).normalize();
-    // 沿大圆弧修正 (lerp+lift 模拟表面弧)
-    const elev = RADIUS + lift + Math.sin(t * Math.PI) * (angle * 0.15 + 0.01);
-    pts.push(v.multiplyScalar(elev));
-  }
+function makeArc(a,b,segs=40,lift=0){
+  const va=latLngToVec3(a.lat,a.lng,1).normalize(), vb=latLngToVec3(b.lat,b.lng,1).normalize();
+  const ang=va.angleTo(vb), pts=[];
+  for(let i=0;i<=segs;i++){const t=i/segs; const v=new THREE.Vector3().copy(va).lerp(vb,t).normalize();
+    pts.push(v.multiplyScalar(R+lift+Math.sin(t*Math.PI)*(ang*0.15+0.01)));}
   return pts;
 }
-
-// === 路径图层 (清除+重画) ===
-let pathLayer = null;
-let cityMarkers = [];
-function clearRoute() {
-  if (pathLayer) { earthGroup.remove(pathLayer); pathLayer.traverse(o=>{o.geometry?.dispose(); o.material?.dispose();}); pathLayer = null; }
-  cityMarkers.forEach(m => { earthGroup.remove(m); m.geometry?.dispose(); m.material?.dispose(); });
-  cityMarkers = [];
-}
-
-// 画一条多航点真实路径
-function drawRoute(waypoints) {
-  clearRoute();
-  pathLayer = new THREE.Group();
-  // 串接每段航点的弧线
-  const allArcPts = [];
-  for (let i = 0; i < waypoints.length - 1; i++) {
-    const seg = waypoints[i].type === 'flight' ? makeArc(waypoints[i], waypoints[i+1], 50, 0.15)
-                                            : makeArc(waypoints[i], waypoints[i+1], 40, 0.0); // 火车贴地, 飞机抬高
-    allArcPts.push(...seg);
-    // 每段单独画线 (可不同色)
-    const geom = new THREE.BufferGeometry().setFromPoints(seg);
-    const color = waypoints[i].type === 'flight' ? 0x22c55e : 0x166534;
-    const line = new THREE.Line(geom, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, linewidth: 2 }));
-    pathLayer.add(line);
+let pathLayer=null;
+function clearRoute(){ if(pathLayer){earthGroup.remove(pathLayer); pathLayer.traverse(o=>{o.geometry?.dispose();o.material?.dispose();}); pathLayer=null;} }
+function drawRoute(wps){
+  clearRoute(); pathLayer=new THREE.Group();
+  for(let i=0;i<wps.length-1;i++){
+    const seg=wps[i].type==='flight'?makeArc(wps[i],wps[i+1],50,0.18):makeArc(wps[i],wps[i+1],40,0.0);
+    const g=new THREE.BufferGeometry().setFromPoints(seg);
+    pathLayer.add(new THREE.Line(g, new THREE.LineBasicMaterial({color:wps[i].type==='flight'?0x38bdf8:0x4ade80, transparent:true, opacity:0.95})));
   }
-  // 城市标记点
-  waypoints.forEach((w, i) => {
-    const pos = latLngToVec3(w.lat, w.lng, RADIUS + 0.015);
-    const isEnd = (i === 0 || i === waypoints.length - 1);
-    const dotGeo = new THREE.SphereGeometry(isEnd ? 0.018 : 0.011, 16, 16);
-    const dotMat = new THREE.MeshBasicMaterial({ color: isEnd ? 0x22c55e : 0x4ade80 });
-    const dot = new THREE.Mesh(dotGeo, dotMat);
-    dot.position.copy(pos);
-    pathLayer.add(dot);
-    // 起终点光柱
-    if (isEnd) {
-      const ringGeo = new THREE.RingGeometry(0.025, 0.035, 24);
-      const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.6, side: THREE.DoubleSide }));
-      ring.position.copy(pos);
-      ring.lookAt(0,0,0);
-      pathLayer.add(ring);
-    }
+  wps.forEach((w,i)=>{
+    const end=(i===0||i===wps.length-1);
+    const dot=new THREE.Mesh(new THREE.SphereGeometry(end?0.02:0.012,16,16), new THREE.MeshBasicMaterial({color:end?0x4ade80:0x38bdf8}));
+    dot.position.copy(latLngToVec3(w.lat,w.lng,R+0.015)); pathLayer.add(dot);
+    if(end){ const ring=new THREE.Mesh(new THREE.RingGeometry(0.028,0.04,24), new THREE.MeshBasicMaterial({color:0x4ade80,transparent:true,opacity:0.6,side:THREE.DoubleSide})); ring.position.copy(latLngToVec3(w.lat,w.lng,R+0.015)); ring.lookAt(0,0,0); pathLayer.add(ring); }
   });
   earthGroup.add(pathLayer);
-
-  // 聚焦: 用四元数把路径中心转到相机方向 (数学保证正确)
-  const midWp = waypoints[Math.floor(waypoints.length/2)];
-  focusOn(midWp);
+  focusOn(wps[Math.floor(wps.length/2)]);
 }
-
-// === 相机平滑聚焦到某点 (四元数, 数学保证正确) ===
-let targetQuat = null, focusing = false;
-function focusOn(wp) {
-  autoRotate = false;
-  // 目标点在 earthGroup 局部坐标的单位向量
-  const v = latLngToVec3(wp.lat, wp.lng, 1).normalize();
-  // 求把 v 转到 +Z (0,0,1) 的四元数
-  const target = new THREE.Vector3(0, 0, 1);
-  const q = new THREE.Quaternion().setFromUnitVectors(v, target);
-  targetQuat = q;
-  focusing = true;
+let targetQuat=null, focusing=false;
+function focusOn(wp){ autoRotate=false; velX=0; velY=0;
+  const v=latLngToVec3(wp.lat,wp.lng,1).normalize();
+  targetQuat=new THREE.Quaternion().setFromUnitVectors(v, new THREE.Vector3(0,0,1)); focusing=true;
 }
-
-// === 交互: 拖拽旋转 + 滚轮缩放 ===
-let isDragging = false, prevX = 0, prevY = 0, autoRotate = true;
-let velX = 0, velY = 0;
-// 缩放: 用 camera.position.z
-const MIN_Z = 1.6, MAX_Z = 5.0;
-canvas.addEventListener('pointerdown', (e) => { isDragging = true; focusing = false; autoRotate = false; velX = 0; velY = 0; prevX = e.clientX; prevY = e.clientY; canvas.setPointerCapture(e.pointerId); });
-canvas.addEventListener('pointermove', (e) => {
-  if (!isDragging) return;
-  velY = (e.clientX - prevX) * 0.005;
-  velX = (e.clientY - prevY) * 0.005;
-  earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0), velY);
-  earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0), velX);
-  prevX = e.clientX; prevY = e.clientY;
+// 交互
+let dragging=false, pX=0,pY=0, autoRotate=true, velX=0,velY=0;
+const MINZ=1.7, MAXZ=5;
+canvas.addEventListener('pointerdown',e=>{dragging=true;focusing=false;autoRotate=false;velX=0;velY=0;pX=e.clientX;pY=e.clientY;canvas.setPointerCapture(e.pointerId);});
+canvas.addEventListener('pointermove',e=>{ if(!dragging)return;
+  velY=(e.clientX-pX)*0.005; velX=(e.clientY-pY)*0.005;
+  earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0),velY);
+  earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0),velX);
+  pX=e.clientX;pY=e.clientY;
 });
-canvas.addEventListener('pointerup', (e) => { isDragging = false; canvas.releasePointerCapture(e.pointerId); });
-canvas.addEventListener('pointerleave', () => { isDragging = false; });
-// 滚轮缩放
-canvas.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  camera.position.z += e.deltaY * 0.002;
-  camera.position.z = Math.max(MIN_Z, Math.min(MAX_Z, camera.position.z));
-}, { passive: false });
+canvas.addEventListener('pointerup',e=>{dragging=false;canvas.releasePointerCapture(e.pointerId);});
+canvas.addEventListener('pointerleave',()=>{dragging=false;});
+canvas.addEventListener('wheel',e=>{e.preventDefault(); camera.position.z=Math.max(MINZ,Math.min(MAXZ,camera.position.z+e.deltaY*0.002));},{passive:false});
 
-function animate() {
+function animate(){
   requestAnimationFrame(animate);
-  if (focusing && targetQuat) {
-    // 四元数球面线性插值平滑聚焦
-    earthGroup.quaternion.slerp(targetQuat, 0.08);
-    if (earthGroup.quaternion.angleTo(targetQuat) < 0.005) { focusing = false; velX = 0; velY = 0; }
-  } else if (autoRotate) {
-    earthGroup.rotation.y += 0.0006;
-  } else if (!isDragging) {
-    // 惯性, 慢慢停下, 不自转
-    if (Math.abs(velX) > 0.0001 || Math.abs(velY) > 0.0001) {
-      earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0), velY);
-      earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0), velX);
-      velY *= 0.94; velX *= 0.94;
-    }
+  if(focusing&&targetQuat){
+    earthGroup.quaternion.slerp(targetQuat,0.08);
+    if(earthGroup.quaternion.angleTo(targetQuat)<0.005){focusing=false;velX=0;velY=0;}
+  } else if(autoRotate){ earthGroup.rotation.y+=0.0006; }
+  else if(!dragging && (Math.abs(velX)>0.0001||Math.abs(velY)>0.0001)){
+    earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0),velY);
+    earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0),velX);
+    velY*=0.94; velX*=0.94;
   }
-  clouds.rotation.y += 0.0002;
-  renderer.render(scene, camera);
+  clouds.rotation.y+=0.0002;
+  renderer.render(scene,camera);
 }
 animate();
-
-// === 暴露给全局: 搜索后画路径 ===
-window.__drawRoute = drawRoute;
-window.__clearRoute = clearRoute;
-
-window.addEventListener('resize', () => {
-  W = container.clientWidth; H = container.clientHeight;
-  camera.aspect = W/H; camera.updateProjectionMatrix();
-  renderer.setSize(W, H);
-});
-
-})(); // IIFE 闭合
+window.__drawRoute=drawRoute;
+window.__clearRoute=clearRoute;
+window.addEventListener('resize',()=>{W=wrap.clientWidth;H=wrap.clientHeight;camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H);});
+})();
 </script>
 </body>
 </html>

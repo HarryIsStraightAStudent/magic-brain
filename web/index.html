@@ -12,241 +12,186 @@
 <script>
   tailwind.config = {
     darkMode: "class",
-    theme: {
-      extend: {
-        colors: {
-          "surface": "#faf9f3",
-          "surface-container-low": "#f5f4ee",
-          "on-surface": "#1b1c19",
-          "on-surface-variant": "#3d4a3d",
-          "primary": "#006e2f",
-          "primary-container": "#22c55e",
-          "on-primary-container": "#004b1e",
-          "secondary": "#1f6c3a",
-          "outline": "#6d7b6c",
-          "surface-variant": "#e3e3dd",
-          "outline-variant": "#bccbb9"
-        },
-        fontFamily: {
-          sans: ["Manrope", "PingFang SC", "sans-serif"]
-        }
-      }
-    }
+    theme: { extend: {
+      colors: {
+        "surface": "#faf9f3", "on-surface": "#1b1c19", "on-surface-variant": "#3d4a3d",
+        "primary": "#006e2f", "primary-container": "#22c55e", "on-primary-container": "#004b1e",
+        "secondary": "#1f6c3a", "outline": "#6d7b6c"
+      },
+      fontFamily: { sans: ["Manrope", "PingFang SC", "sans-serif"] }
+    }}
   }
 </script>
 <style>
   body { font-family: "Manrope", "PingFang SC", sans-serif; }
-
-  /* === Verdant Glass 液态玻璃 === */
   .glass-card {
-    background: rgba(255, 255, 255, 0.72);
+    background: rgba(255,255,255,0.72);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border-top: 1px solid rgba(255, 255, 255, 0.9);
-    border-left: 1px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 8px 32px 0 rgba(0, 110, 47, 0.08), 0 2px 8px rgba(0,0,0,0.04);
+    border-top: 1px solid rgba(255,255,255,0.9);
+    border-left: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 8px 32px 0 rgba(0,110,47,0.08), 0 2px 8px rgba(0,0,0,0.04);
   }
   .glass-nav {
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(255,255,255,0.55);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+    border-bottom: 1px solid rgba(255,255,255,0.7);
   }
   .glass-input {
-    background-color: rgba(250, 249, 243, 0.8);
+    background-color: rgba(250,249,243,0.8);
     border: 1px solid transparent;
     transition: all 0.2s ease;
   }
-  .glass-input:focus {
-    border-color: #22c55e;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
-  }
-  .green-glow { box-shadow: 0 4px 24px rgba(34, 197, 94, 0.4); }
-
-  /* === 地球 (本地 CSS 渲染, 零外链) === */
-  .globe {
-    background: radial-gradient(circle at 32% 28%,
-      #ffffff 0%, #f0fdf4 8%, #dcfce7 28%, #bbf7d0 55%, #4ade80 78%, #16a34a 100%);
-    box-shadow:
-      inset -50px -50px 120px rgba(20, 83, 45, 0.18),
-      inset 30px 30px 80px rgba(255,255,255,0.5),
-      0 30px 80px rgba(34, 197, 94, 0.18);
-  }
-  .globe::before {
-    content: ""; position: absolute; inset: 0; border-radius: 9999px;
-    background-image: repeating-radial-gradient(circle at 42% 38%,
-      transparent 0, transparent 22px, rgba(255,255,255,0.12) 22px, rgba(255,255,255,0.12) 44px);
-    mix-blend-mode: overlay; opacity: 0.5;
-  }
-  .globe::after {
-    content: ""; position: absolute; top: 8%; left: 18%; width: 38%; height: 38%;
-    background: radial-gradient(circle, rgba(255,255,255,0.6), transparent 70%);
-    border-radius: 9999px; filter: blur(20px);
-  }
-  /* 轨道弧线 */
-  .orbit-arc {
-    position: absolute; border: 1.5px solid rgba(34,197,94,0.25); border-radius: 9999px;
-    border-color: rgba(34,197,94,0.2) transparent transparent transparent;
-    transform: rotate(35deg);
-  }
-
-  /* === Tab 切换动画 === */
+  .glass-input:focus { border-color: #22c55e; outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,0.15); }
+  .green-glow { box-shadow: 0 4px 24px rgba(34,197,94,0.4); }
   .tab-panel { display: none; }
-  .tab-panel.active {
-    display: block;
-    animation: panelIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  @keyframes panelIn {
-    from { opacity: 0; transform: translateY(8px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
+  .tab-panel.active { display: flex; animation: panelIn 0.4s cubic-bezier(0.22,1,0.36,1); }
+  @keyframes panelIn { from{opacity:0;transform:translateY(8px) scale(0.98)} to{opacity:1;transform:none} }
   .tab-btn { transition: all 0.3s ease; }
-  .tab-btn.active { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); color:#006e2f; }
-
-  /* === 聊天气泡 === */
+  .tab-btn.active { background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.06); color:#006e2f; }
   .msg { animation: msgIn 0.35s ease; }
-  @keyframes msgIn { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform:none;} }
+  @keyframes msgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
   .typing span { animation: blink 1.4s infinite; }
-  .typing span:nth-child(2){ animation-delay: 0.2s; }
-  .typing span:nth-child(3){ animation-delay: 0.4s; }
+  .typing span:nth-child(2){animation-delay:0.2s}
+  .typing span:nth-child(3){animation-delay:0.4s}
   @keyframes blink { 0%,60%,100%{opacity:0.3} 30%{opacity:1} }
-
-  .hide-scrollbar::-webkit-scrollbar { display:none; }
-  .hide-scrollbar { scrollbar-width: none; }
-
-  /* 省钱数字脉动 */
-  .pulse-save { animation: pulseSave 2s ease-in-out infinite; }
-  @keyframes pulseSave { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+  .hide-scrollbar::-webkit-scrollbar{display:none}
+  .hide-scrollbar{scrollbar-width:none}
+  .pulse-save{animation:pulseSave 2s ease-in-out infinite}
+  @keyframes pulseSave{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+  .view{display:none}
+  .view.active{display:block;animation:panelIn 0.4s ease}
+  #globe-canvas{cursor:grab}
+  #globe-canvas:active{cursor:grabbing}
+  .timeline-dot{box-shadow:0 0 0 4px #f0fdf4}
+  .route-card.selected{ring-color:#22c55e}
 </style>
 </head>
 <body class="bg-gradient-to-br from-white via-[#faf9f3] to-[#f0fdf4] text-on-surface min-h-screen flex flex-col relative overflow-x-hidden">
 
-<!-- 地球背景 (右侧铺满) -->
-<div class="fixed top-1/2 right-0 -translate-y-1/2 translate-x-[20%] md:translate-x-[25%] w-[600px] h-[600px] md:w-[900px] md:h-[900px] pointer-events-none z-0">
-  <div class="globe relative w-full h-full rounded-full"></div>
-  <div class="orbit-arc w-[120%] h-[120%] -top-[10%] -left-[10%]"></div>
-  <div class="orbit-arc w-[140%] h-[140%] -top-[20%] -left-[20%]" style="transform:rotate(-20deg); border-color: rgba(34,197,94,0.12) transparent transparent transparent;"></div>
+<!-- 3D 地球画布 (右侧固定) -->
+<div class="fixed top-1/2 right-0 -translate-y-1/2 translate-x-[15%] md:translate-x-[25%] z-0 pointer-events-auto" style="width:min(90vw,820px);height:min(90vw,820px)">
+  <canvas id="globe-canvas" class="w-full h-full"></canvas>
 </div>
 
 <!-- 顶部导航 -->
 <nav class="fixed top-0 w-full z-50 glass-nav h-16 flex justify-between items-center px-5 md:px-10">
-  <span class="font-bold text-xl text-[#006e2f]">🧠 魔法大脑</span>
+  <span class="font-bold text-xl text-[#006e2f] cursor-pointer" onclick="showView('home')">🧠 魔法大脑</span>
   <div class="hidden md:flex gap-8">
-    <a class="text-on-surface-variant font-medium hover:text-[#006e2f] transition-colors" href="#">省钱案例</a>
-    <a class="text-on-surface-variant font-medium hover:text-[#006e2f] transition-colors" href="#">关于</a>
+    <a class="text-on-surface-variant font-medium hover:text-[#006e2f] transition-colors cursor-pointer" onclick="showView('cases')">省钱案例</a>
+    <a class="text-on-surface-variant font-medium hover:text-[#006e2f] transition-colors cursor-pointer" onclick="showView('about')">关于</a>
   </div>
   <span class="text-xs text-on-surface-variant bg-white/60 px-3 py-1.5 rounded-full border border-white/70">GOAI · Track 02</span>
 </nav>
 
-<!-- 主内容 -->
-<main class="flex-grow pt-24 pb-10 px-4 md:px-10 flex items-center min-h-screen relative z-10">
-<div class="w-full max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- ============ 主视图: 首页 ============ -->
+<div id="view-home" class="view active flex-grow pt-24 pb-10 px-4 md:px-10 flex items-center min-h-screen relative z-10">
+  <div class="w-full max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
+    <div class="md:col-span-6 lg:col-span-5 flex flex-col justify-center relative">
+      <div class="absolute -inset-4 bg-white/30 blur-3xl rounded-[2.5rem] z-0"></div>
+      <div class="glass-card rounded-[24px] relative z-10 flex flex-col overflow-hidden h-[620px]">
+        <!-- Tab 切换 -->
+        <div class="flex items-center p-2 gap-2 border-b border-white/60 bg-white/30 shrink-0">
+          <button id="tab-search" class="tab-btn active flex-1 py-2.5 px-4 text-center rounded-xl font-semibold text-sm" onclick="switchTab('search')">✈️ 魔法搜索</button>
+          <button id="tab-ai" class="tab-btn flex-1 py-2.5 px-4 text-center rounded-xl font-semibold text-sm text-on-surface-variant hover:text-[#006e2f]" onclick="switchTab('ai')">🤖 AI 辅助购票</button>
+        </div>
 
-  <!-- 左侧: 液态玻璃交互卡 -->
-  <div class="md:col-span-6 lg:col-span-5 flex flex-col justify-center relative">
-    <div class="absolute -inset-4 bg-white/30 blur-3xl rounded-[2.5rem] z-0"></div>
-
-    <div class="glass-card rounded-[24px] relative z-10 flex flex-col overflow-hidden h-[620px]">
-      <!-- Tab 切换 -->
-      <div class="flex items-center p-2 gap-2 border-b border-white/60 bg-white/30">
-        <button id="tab-search" class="tab-btn active flex-1 py-2.5 px-4 text-center rounded-xl font-semibold text-sm" onclick="switchTab('search')">
-          ✈️ 魔法搜索
-        </button>
-        <button id="tab-ai" class="tab-btn flex-1 py-2.5 px-4 text-center rounded-xl font-semibold text-sm text-on-surface-variant hover:text-[#006e2f]" onclick="switchTab('ai')">
-          🤖 AI 辅助购票
-        </button>
-      </div>
-
-      <!-- ====== 面板 1: 搜索 ====== -->
-      <div id="panel-search" class="tab-panel active flex-1 overflow-y-auto p-5 md:p-6">
-        <h2 class="font-bold text-2xl mb-1 tracking-tight">去哪儿, 更省钱?</h2>
-        <p class="text-sm text-on-surface-variant mb-5">输入起终点, 发现隐藏的中转套利路线</p>
-
-        <div class="space-y-4">
-          <!-- 始发/终到 -->
-          <div class="grid grid-cols-1 gap-3 relative">
-            <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-on-surface-variant">始发地</label>
-              <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">flight_takeoff</span>
-                <select id="origin" class="glass-input w-full rounded-xl py-3 pl-10 pr-4 text-base"></select>
+        <!-- 面板1: 搜索 -->
+        <div id="panel-search" class="tab-panel active flex-1 overflow-y-auto p-5 md:p-6 flex-col">
+          <h2 class="font-bold text-2xl mb-1 tracking-tight">去哪儿, 更省钱?</h2>
+          <p class="text-sm text-on-surface-variant mb-5">输入起终点, 发现隐藏的中转套利路线</p>
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-on-surface-variant">始发地</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">flight_takeoff</span>
+                  <select id="origin" class="glass-input w-full rounded-xl py-3 pl-10 pr-4 text-base"></select>
+                </div>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-xs font-medium text-on-surface-variant">目的地</label>
+                <div class="relative">
+                  <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">flight_land</span>
+                  <select id="destination" class="glass-input w-full rounded-xl py-3 pl-10 pr-4 text-base"></select>
+                </div>
               </div>
             </div>
             <div class="flex flex-col gap-1.5">
-              <label class="text-xs font-medium text-on-surface-variant">目的地</label>
+              <label class="text-xs font-medium text-on-surface-variant">偏好设置</label>
               <div class="relative">
-                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">flight_land</span>
-                <select id="destination" class="glass-input w-full rounded-xl py-3 pl-10 pr-4 text-base"></select>
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">tune</span>
+                <select id="weight" class="glass-input w-full rounded-xl py-3 pl-10 pr-10 text-base cursor-pointer appearance-none">
+                  <option value="price">省钱优先</option>
+                  <option value="balanced">均衡</option>
+                  <option value="time">时间优先</option>
+                </select>
+                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70 pointer-events-none" style="font-size:20px">expand_more</span>
               </div>
             </div>
+            <button onclick="doSearch()" id="btnSearch" class="w-full bg-[#22c55e] text-white font-bold text-lg py-4 rounded-xl hover:opacity-95 transition-all green-glow border-t border-white/40">✨ 魔法搜索</button>
           </div>
-          <!-- 偏好 -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-medium text-on-surface-variant">偏好设置</label>
-            <div class="relative">
-              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70" style="font-size:20px">tune</span>
-              <select id="weight" class="glass-input w-full rounded-xl py-3 pl-10 pr-10 text-base cursor-pointer appearance-none">
-                <option value="price">省钱优先</option>
-                <option value="balanced">均衡</option>
-                <option value="time">时间优先</option>
-              </select>
-              <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-70 pointer-events-none" style="font-size:20px">expand_more</span>
+          <div id="search-results" class="mt-5 hidden"></div>
+        </div>
+
+        <!-- 面板2: AI -->
+        <div id="panel-ai" class="tab-panel flex-1 overflow-hidden p-4 md:p-6 flex-col">
+          <div id="chat-log" class="flex-1 overflow-y-auto flex flex-col gap-3 hide-scrollbar"></div>
+          <div class="border-t border-white/60 bg-white/40 backdrop-blur-md pt-3 -mx-4 md:-mx-6 px-4 md:px-6 pb-1 shrink-0">
+            <div class="relative flex items-center">
+              <input id="ai-input" class="glass-input w-full rounded-full py-3 pl-4 pr-14 text-base outline-none" placeholder="问问魔法大脑..." onkeydown="if(event.key==='Enter')sendAI()"/>
+              <button onclick="sendAI()" class="absolute right-2 w-9 h-9 flex items-center justify-center rounded-full bg-[#22c55e] text-white hover:opacity-90 transition-opacity border-t border-white/70 shadow-sm">
+                <span class="material-symbols-outlined" style="font-size:18px">send</span>
+              </button>
+            </div>
+            <div class="flex gap-2 mt-2.5 overflow-x-auto pb-1 hide-scrollbar">
+              <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('下周三晚去香港，便宜点')">下周三晚去香港</button>
+              <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('从北京到香港怎么省')">北京到香港怎么省</button>
+              <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('去澳门便宜的走法')">去澳门便宜的走法</button>
             </div>
           </div>
-          <!-- 搜索按钮 -->
-          <button onclick="doSearch()" id="btnSearch" class="w-full bg-[#22c55e] text-white font-bold text-lg py-4 rounded-xl hover:opacity-95 transition-all green-glow border-t border-white/40 flex items-center justify-center gap-2">
-            ✨ 魔法搜索
-          </button>
-        </div>
-
-        <!-- 结果区 (搜索后填充) -->
-        <div id="search-results" class="mt-5 hidden"></div>
-      </div>
-
-      <!-- ====== 面板 2: AI 聊天 ====== -->
-      <div id="panel-ai" class="tab-panel flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-3">
-        <div id="chat-log" class="flex-1 overflow-y-auto flex flex-col gap-3 hide-scrollbar"></div>
-        <!-- 输入区 -->
-        <div class="border-t border-white/60 bg-white/40 backdrop-blur-md pt-3 -mx-4 md:-mx-6 px-4 md:px-6 pb-1">
-          <div class="relative flex items-center">
-            <input id="ai-input" class="glass-input w-full rounded-full py-3 pl-4 pr-14 text-base outline-none" placeholder="问问魔法大脑..." onkeydown="if(event.key==='Enter')sendAI()"/>
-            <button onclick="sendAI()" class="absolute right-2 w-9 h-9 flex items-center justify-center rounded-full bg-[#22c55e] text-white hover:opacity-90 transition-opacity border-t border-white/70 shadow-sm">
-              <span class="material-symbols-outlined" style="font-size:18px">send</span>
-            </button>
-          </div>
-          <div class="flex gap-2 mt-2.5 overflow-x-auto pb-1 hide-scrollbar">
-            <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('下周三晚去香港, 便宜点')">下周三晚去香港</button>
-            <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('上海到三亚怎么省')">上海到三亚怎么省</button>
-            <button class="whitespace-nowrap px-3 py-1 rounded-full bg-white/70 border border-white/80 text-xs text-on-surface-variant hover:bg-white transition-colors" onclick="quickAsk('去澳门便宜的走法')">去澳门便宜的走法</button>
-          </div>
         </div>
       </div>
-    </div>
-
-    <!-- 卡片下快捷标签 -->
-    <div class="flex gap-2 mt-4 flex-wrap">
-      <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🌱 多模态套利</span>
-      <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🚄 空铁联运</span>
-    </div>
-  </div>
-
-  <!-- 右侧: 地球占位 (背景层已渲染) -->
-  <div class="hidden md:flex md:col-span-6 lg:col-span-7 items-center justify-center relative">
-    <div class="text-right max-w-xs opacity-0 md:opacity-100">
-      <p class="text-xs text-on-surface-variant/60">数据驱动 · 真实票价</p>
+      <div class="flex gap-2 mt-4 flex-wrap">
+        <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🌱 多模态套利</span>
+        <span class="bg-white/50 backdrop-blur-md border border-white/70 px-3 py-1 rounded-full text-xs text-on-surface-variant shadow-sm">🚄 空铁联运</span>
+      </div>
     </div>
   </div>
 </div>
-</main>
+
+<!-- ============ 视图: 路线详情 ============ -->
+<div id="view-detail" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10">
+  <div class="w-full max-w-3xl mx-auto" id="detail-content"></div>
+</div>
+
+<!-- ============ 视图: 省钱案例 ============ -->
+<div id="view-cases" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10">
+  <div class="w-full max-w-4xl mx-auto" id="cases-content"></div>
+</div>
+
+<!-- ============ 视图: 关于 ============ -->
+<div id="view-about" class="view flex-grow pt-24 pb-10 px-4 md:px-10 relative z-10">
+  <div class="w-full max-w-2xl mx-auto glass-card rounded-[24px] p-8 md:p-10">
+    <h1 class="text-3xl font-extrabold mb-3 text-[#006e2f]">关于魔法大脑</h1>
+    <p class="text-on-surface-variant mb-6 leading-relaxed">一个把"人肉摸索省钱路线"能力做成自动化 AI 搜索引擎的产品。参赛 GOAI Global Open-source AI Challenge · Track 02 Boundless Agents。</p>
+    <div class="space-y-4">
+      <div><h3 class="font-bold text-lg mb-1">💡 故事</h3><p class="text-sm text-on-surface-variant">从上海去香港，高铁直达 ¥966。但坐 D941 动卧到深圳（¥507）再过关到香港（¥60），全程只要 ¥567 —— 省 ¥399 (41%)，还能在卧铺睡一觉。</p></div>
+      <div><h3 class="font-bold text-lg mb-1">🎯 核心洞察</h3><p class="text-sm text-on-surface-variant">导航 App 只做"最快路径"，OTA 只卖"直达库存"，没人做"多模态中转套利"。</p></div>
+      <div><h3 class="font-bold text-lg mb-1">🛠️ 技术</h3><p class="text-sm text-on-surface-variant">多模态交通图 + 多目标 Dijkstra + GLM-4.5 意图解析。纯 Python 标准库引擎 + FastAPI + Three.js 3D 地球。</p></div>
+    </div>
+    <button onclick="showView('home')" class="mt-8 bg-[#22c55e] text-white font-semibold py-3 px-6 rounded-xl hover:opacity-95 transition-opacity green-glow">← 返回首页</button>
+  </div>
+</div>
 
 <footer class="w-full py-8 px-8 flex flex-col md:flex-row justify-between items-center gap-3 glass-nav relative z-20">
-  <div class="font-bold text-[#006e2f]">🧠 魔法大脑</div>
+  <div class="font-bold text-[#006e2f] cursor-pointer" onclick="showView('home')">🧠 魔法大脑</div>
   <div class="text-xs text-on-surface-variant">GOAI Challenge · 让每一程更省</div>
 </footer>
 
 <script>
-let CITIES = {}, PAIRS = [];
+let CITIES = {}, PAIRS = [], lastSearchData = null;
 
 async function init() {
   const res = await fetch('/api/cities');
@@ -259,8 +204,14 @@ async function init() {
     oSel.add(new Option(c.name, code));
     dSel.add(new Option(c.name, code));
   });
-  oSel.value = 'SHA';
-  dSel.value = 'HKG';
+  oSel.value = 'SHA'; dSel.value = 'HKG';
+}
+
+// === 视图切换 ===
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  window.scrollTo(0, 0);
 }
 
 // === Tab 切换 ===
@@ -291,81 +242,136 @@ async function doSearch() {
     const res = await fetch(`/api/search?origin=${o}&destination=${d}&weight=${w}`);
     const data = await res.json();
     if (data.error) { results.innerHTML = `<div class="text-center py-4 text-sm text-red-500">${data.error}</div>`; return; }
+    lastSearchData = data;
     renderSearchResults(data);
   } catch (e) {
     results.innerHTML = `<div class="text-center py-4 text-sm text-red-500">搜索出错, 请确认后端服务已启动</div>`;
-  } finally {
-    btn.disabled = false;
-  }
+  } finally { btn.disabled = false; }
 }
 
 function renderSearchResults(data) {
   const results = document.getElementById('search-results');
-  const best = data.savings.filter(s => s.savings_price > 0).sort((a,b) => b.savings_price - a.savings_price)[0];
+  const best = data.savings.filter(s => s.savings_price > 0).sort((a,b)=>b.savings_price-a.savings_price)[0];
   let html = '';
-
-  // 省钱横幅
   if (best) {
     const faster = best.time_cost_min < 0 ? ' · 还更快' : '';
-    html += `
-      <div class="pulse-save rounded-2xl p-4 text-white text-center" style="background:linear-gradient(135deg,#22c55e,#16a34a)">
-        <div class="text-xs opacity-90">🎉 你能省</div>
-        <div class="text-4xl font-extrabold leading-none my-1">¥${Math.round(best.savings_price)}</div>
-        <div class="text-sm opacity-95">(${Math.round(best.savings_ratio*100)}% ↓${faster})</div>
-        <div class="text-[11px] opacity-80 mt-1">比 ${best.benchmark_name} 便宜</div>
-      </div>`;
+    html += `<div class="pulse-save rounded-2xl p-4 text-white text-center" style="background:linear-gradient(135deg,#22c55e,#16a34a)">
+      <div class="text-xs opacity-90">🎉 你能省</div>
+      <div class="text-4xl font-extrabold leading-none my-1">¥${Math.round(best.savings_price)}</div>
+      <div class="text-sm opacity-95">(${Math.round(best.savings_ratio*100)}% ↓${faster})</div>
+      <div class="text-[11px] opacity-80 mt-1">比 ${best.benchmark_name} 便宜</div>
+    </div>`;
   }
-
-  // 路径卡片
   data.paths.forEach((p, i) => {
     const isRec = i === 0 && p.total_price === Math.min(...data.paths.map(x=>x.total_price));
-    const segIcons = p.segments.map(s => modeIcon(s.mode)).join(' ');
     const segShort = p.segments.map(s => s.label.split(' ')[0]).join(' → ');
-    html += `
-      <div class="bg-white/70 border border-white/80 rounded-xl p-3.5 mt-3 ${isRec ? 'ring-2 ring-[#22c55e]/40' : ''}">
-        <div class="flex justify-between items-start">
-          <div>
-            <div class="font-semibold text-sm">${isRec ? '⭐ ' : ''}${segShort}</div>
-            <div class="text-2xl font-extrabold text-[#006e2f]">¥${Math.round(p.total_price)}</div>
-          </div>
-          <div class="text-right text-xs text-on-surface-variant">
-            <div class="text-sm font-medium text-on-surface">${p.duration_text}</div>
-            <div>${p.transfers}次换乘</div>
-          </div>
+    html += `<div class="bg-white/70 border border-white/80 rounded-xl p-3.5 mt-3 cursor-pointer hover:bg-white/90 transition-all ${isRec?'ring-2 ring-[#22c55e]/40':''}" onclick='openDetail(${i})'>
+      <div class="flex justify-between items-start">
+        <div>
+          <div class="font-semibold text-sm">${isRec?'⭐ ':''}${segShort}</div>
+          <div class="text-2xl font-extrabold text-[#006e2f]">¥${Math.round(p.total_price)}</div>
         </div>
-        <div class="mt-2 text-lg">${segIcons}</div>
-        <div class="mt-2 flex gap-1.5 flex-wrap">
-          ${isRec ? '<span class="text-[11px] bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-full font-medium">推荐省钱</span>' : ''}
-          <span class="text-[11px] bg-[#f0fdf4] text-[#166534] px-2 py-0.5 rounded-full">${p.duration_text}</span>
+        <div class="text-right text-xs text-on-surface-variant">
+          <div class="text-sm font-medium text-on-surface">${p.duration_text}</div>
+          <div>${p.transfers}次换乘</div>
         </div>
-        <div class="mt-2 pt-2 border-t border-gray-100 text-xs space-y-1">
-          ${p.segments.map(s => `<div class="flex justify-between text-on-surface-variant"><span>${modeIcon(s.mode)} ${s.label}</span><span>¥${Math.round(s.price)} · ${durTxt(s.duration_min)}</span></div>`).join('')}
-        </div>
-      </div>`;
+      </div>
+      <div class="mt-2 text-xs text-[#006e2f] font-medium">查看路线详情 →</div>
+    </div>`;
   });
-
-  // 基准对比
   if (data.baselines.length) {
     html += `<div class="mt-4"><div class="text-xs font-medium text-on-surface-variant mb-2">直达基准对比</div>`;
     data.baselines.forEach(b => {
       const t = b.type === 'flight_direct' ? '✈️ 飞机直达' : '🚄 高铁直达';
-      html += `<div class="bg-white/50 border border-white/60 rounded-lg px-3 py-2 mb-1.5 flex justify-between items-center">
-        <span class="text-sm">${t}</span>
-        <span class="font-bold text-on-surface-variant line-through decoration-[#22c55e] decoration-2">¥${Math.round(b.price)}</span>
-      </div>`;
+      html += `<div class="bg-white/50 border border-white/60 rounded-lg px-3 py-2 mb-1.5 flex justify-between items-center"><span class="text-sm">${t}</span><span class="font-bold text-on-surface-variant line-through decoration-[#22c55e] decoration-2">¥${Math.round(b.price)}</span></div>`;
     });
     html += `</div>`;
   }
   results.innerHTML = html;
 }
 
-function modeIcon(m) {
-  return ({flight:'✈️', train_hsr:'🚄', train_sleeper:'🛏️', train_seat:'🚃', metro:'🚇', bus:'🚌', walk_border:'🚶', taxi:'🚕'})[m] || '•';
+// === 路线详情视图 ===
+function openDetail(pathIdx) {
+  if (!lastSearchData) return;
+  const p = lastSearchData.paths[pathIdx];
+  const oName = CITIES[lastSearchData.origin]?.name || lastSearchData.origin;
+  const dName = CITIES[lastSearchData.destination]?.name || lastSearchData.destination;
+  const best = lastSearchData.savings.filter(s=>s.savings_price>0).sort((a,b)=>b.savings_price-a.savings_price)[0];
+  let segIdx = 0;
+  const totalSegs = p.segments.length;
+  let timelineHtml = '';
+  p.segments.forEach((s, i) => {
+    const isFirst = i === 0, isLast = i === totalSegs - 1;
+    const lineColor = isLast ? 'transparent' : '#bbf7d0';
+    timelineHtml += `<div class="flex gap-4">
+      <div class="flex flex-col items-center">
+        <div class="timeline-dot w-3.5 h-3.5 rounded-full bg-[#22c55e] mt-1.5"></div>
+        <div class="w-0.5 flex-1 min-h-[40px]" style="background:${lineColor}"></div>
+      </div>
+      <div class="flex-1 pb-6">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-lg">${modeIcon(s.mode)}</span>
+          <span class="font-bold text-base">${s.label.split(' ')[0]||s.label}</span>
+          <span class="text-xs text-on-surface-variant bg-[#f0fdf4] px-2 py-0.5 rounded-full">${durTxt(s.duration_min)}</span>
+        </div>
+        <div class="text-sm text-on-surface-variant">${s.label}</div>
+        ${s.depart ? `<div class="text-xs text-on-surface-variant mt-1">⏰ ${s.depart} 出发</div>` : ''}
+        <div class="text-sm font-semibold text-[#006e2f] mt-1">¥${Math.round(s.price)}</div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('detail-content').innerHTML = `
+    <button onclick="showView('home')" class="mb-4 text-sm text-on-surface-variant hover:text-[#006e2f] flex items-center gap-1"><span class="material-symbols-outlined" style="font-size:18px">arrow_back</span>返回</button>
+    <div class="glass-card rounded-[24px] p-6 md:p-8">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h1 class="text-2xl font-extrabold">${oName} → ${dName}</h1>
+          <p class="text-sm text-on-surface-variant mt-1">${p.segments.length}段路 · ${p.transfers}次换乘 · ${p.duration_text}</p>
+        </div>
+        <div class="text-right">
+          <div class="text-3xl font-extrabold text-[#006e2f]">¥${Math.round(p.total_price)}</div>
+          ${best ? `<div class="text-xs bg-[#dcfce7] text-[#166534] px-2 py-0.5 rounded-full mt-1 font-medium">省 ¥${Math.round(best.savings_price)}</div>` : ''}
+        </div>
+      </div>
+      ${best ? `<div class="rounded-xl p-3 mb-5 text-sm" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#166534">🎉 这条路线比 ${best.benchmark_name}(¥${Math.round(best.benchmark_price)}) 省 ¥${Math.round(best.savings_price)} (${Math.round(best.savings_ratio*100)}%)</div>` : ''}
+      <h3 class="font-bold text-lg mb-4">📍 路线时间轴</h3>
+      <div>${timelineHtml}</div>
+      <div class="mt-6 pt-6 border-t border-gray-100 flex gap-3">
+        <button onclick="showView('home')" class="flex-1 py-3 rounded-xl border border-[#22c55e]/30 text-[#006e2f] font-semibold hover:bg-[#22c55e]/5">再搜其他路线</button>
+        <button onclick="alert('订票跳转功能开发中，当前为 demo')" class="flex-1 py-3 rounded-xl bg-[#22c55e] text-white font-semibold hover:opacity-95 green-glow">去订票 →</button>
+      </div>
+    </div>`;
+  showView('detail');
 }
-function durTxt(min) {
-  if (min <= 0) return '0分';
-  const h = Math.floor(min/60), m = min%60;
-  return (h ? h+'小时' : '') + (m ? m+'分' : '');
+
+// === 省钱案例视图 ===
+function renderCases() {
+  const samples = [
+    {from:'上海', to:'香港', save:399, pct:41, method:'D941动卧经深圳过关', vs:'高铁直达¥966', verified:true},
+    {from:'北京', to:'香港', save:560, pct:47, method:'D901动卧经深圳过关', vs:'高铁直达¥1180', verified:false},
+    {from:'上海', to:'三亚', save:500, pct:45, method:'飞海口+环岛高铁', vs:'直飞¥1100', verified:false},
+    {from:'上海', to:'澳门', save:414, pct:46, method:'飞珠海+拱北过关', vs:'直飞¥900', verified:false},
+    {from:'广州', to:'香港', save:75, pct:35, method:'广深城铁+港铁', vs:'广深港高铁¥215', verified:false},
+  ];
+  let html = `<h1 class="text-3xl font-extrabold mb-2 text-[#006e2f]">💰 省钱案例</h1>
+    <p class="text-on-surface-variant mb-6">真实与推断的套利案例汇总。<span class="text-xs">✅=真实核实 · ⏳=待核实</span></p>
+    <div class="grid gap-4">`;
+  samples.forEach(c => {
+    html += `<div class="glass-card rounded-2xl p-5 flex justify-between items-center cursor-pointer hover:scale-[1.01] transition-transform" onclick="showView('home')">
+      <div>
+        <div class="font-bold text-lg">${c.from} → ${c.to} ${c.verified?'<span class="text-xs text-[#166534]">✅</span>':'<span class="text-xs text-on-surface-variant">⏳</span>'}</div>
+        <div class="text-sm text-on-surface-variant mt-0.5">${c.method}</div>
+        <div class="text-xs text-on-surface-variant mt-1">对比: ${c.vs}</div>
+      </div>
+      <div class="text-right">
+        <div class="text-2xl font-extrabold text-[#006e2f]">省¥${c.save}</div>
+        <div class="text-xs text-[#166534]">${c.pct}% ↓</div>
+      </div>
+    </div>`;
+  });
+  html += `</div><button onclick="showView('home')" class="mt-6 bg-[#22c55e] text-white font-semibold py-3 px-6 rounded-xl hover:opacity-95 green-glow">← 返回首页</button>`;
+  document.getElementById('cases-content').innerHTML = html;
 }
 
 // === AI 聊天 ===
@@ -373,79 +379,157 @@ function addBotMsg(html) {
   const log = document.getElementById('chat-log');
   const div = document.createElement('div');
   div.className = 'msg flex gap-2 max-w-[90%]';
-  div.innerHTML = `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white border border-gray-100 text-[#006e2f] shadow-sm"><span class="material-symbols-outlined" style="font-size:18px">smart_toy</span></div>
-    <div class="bg-white/90 rounded-2xl rounded-tl-sm p-3.5 shadow-sm border border-gray-100 text-sm leading-relaxed">${html}</div>`;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
+  div.innerHTML = `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white border border-gray-100 text-[#006e2f] shadow-sm"><span class="material-symbols-outlined" style="font-size:18px">smart_toy</span></div><div class="bg-white/90 rounded-2xl rounded-tl-sm p-3.5 shadow-sm border border-gray-100 text-sm leading-relaxed">${html}</div>`;
+  log.appendChild(div); log.scrollTop = log.scrollHeight;
 }
 function addUserMsg(text) {
   const log = document.getElementById('chat-log');
   const div = document.createElement('div');
   div.className = 'msg flex gap-2 max-w-[90%] self-end flex-row-reverse';
-  div.innerHTML = `<div class="w-8 h-8 rounded-full bg-gray-100 border border-white/50 flex items-center justify-center shrink-0 text-gray-500"><span class="material-symbols-outlined" style="font-size:18px">person</span></div>
-    <div class="bg-[#22c55e] text-white rounded-2xl rounded-tr-sm p-3.5 shadow-sm text-sm">${text}</div>`;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
+  div.innerHTML = `<div class="w-8 h-8 rounded-full bg-gray-100 border border-white/50 flex items-center justify-center shrink-0 text-gray-500"><span class="material-symbols-outlined" style="font-size:18px">person</span></div><div class="bg-[#22c55e] text-white rounded-2xl rounded-tr-sm p-3.5 shadow-sm text-sm">${text}</div>`;
+  log.appendChild(div); log.scrollTop = log.scrollHeight;
 }
 function showTyping() {
   const log = document.getElementById('chat-log');
   const div = document.createElement('div');
   div.id = 'typing-indicator';
   div.className = 'flex gap-2 max-w-[90%]';
-  div.innerHTML = `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white border border-gray-100 text-[#006e2f] shadow-sm"><span class="material-symbols-outlined" style="font-size:18px">smart_toy</span></div>
-    <div class="bg-white/90 rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100 typing text-on-surface-variant"><span>●</span><span>●</span><span>●</span></div>`;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
+  div.innerHTML = `<div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white border border-gray-100 text-[#006e2f] shadow-sm"><span class="material-symbols-outlined" style="font-size:18px">smart_toy</span></div><div class="bg-white/90 rounded-2xl rounded-tl-sm p-4 shadow-sm border border-gray-100 typing text-on-surface-variant"><span>●</span><span>●</span><span>●</span></div>`;
+  log.appendChild(div); log.scrollTop = log.scrollHeight;
 }
-function hideTyping() {
-  const t = document.getElementById('typing-indicator');
-  if (t) t.remove();
-}
-
-function quickAsk(q) {
-  document.getElementById('ai-input').value = q;
-  sendAI();
-}
+function hideTyping() { const t = document.getElementById('typing-indicator'); if (t) t.remove(); }
+function quickAsk(q) { document.getElementById('ai-input').value = q; sendAI(); }
 
 async function sendAI() {
   const input = document.getElementById('ai-input');
   const text = input.value.trim();
   if (!text) return;
-  addUserMsg(text);
-  input.value = '';
-  showTyping();
+  addUserMsg(text); input.value = ''; showTyping();
   try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({message: text})
-    });
+    const res = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:text})});
     const data = await res.json();
-    hideTyping();
-    addBotMsg(data.reply);
+    hideTyping(); addBotMsg(data.reply);
     if (data.route) {
       const r = data.route;
       addBotMsg(`<div class="bg-[#f0fdf4]/60 rounded-xl p-3 border border-[#bbf7d0] mt-1">
-        <div class="flex justify-between items-center mb-2">
-          <span class="text-xs font-semibold text-[#006e2f]">🛏️ ${r.title}</span>
-          <span class="text-xs text-white bg-[#22c55e] px-2 py-0.5 rounded-full">省 ¥${r.savings}</span>
-        </div>
+        <div class="flex justify-between items-center mb-2"><span class="text-xs font-semibold text-[#006e2f]">🛏️ ${r.title}</span><span class="text-xs text-white bg-[#22c55e] px-2 py-0.5 rounded-full">省 ¥${r.savings}</span></div>
         <div class="flex justify-between items-center">
           <div class="text-center"><div class="font-bold text-base">${r.dept}</div><div class="text-[11px] text-gray-500">${r.dept_name}</div></div>
           <div class="flex-1 flex items-center px-2"><div class="h-0.5 w-full bg-[#22c55e] relative"></div><span class="material-symbols-outlined absolute text-[#22c55e]" style="font-size:16px">arrow_forward_ios</span></div>
           <div class="text-center"><div class="font-bold text-base">${r.arr}</div><div class="text-[11px] text-gray-500">${r.arr_name}</div></div>
         </div>
         <div class="mt-2 text-center font-bold text-[#006e2f]">¥${r.price} · ${r.duration}</div>
-        <button onclick="switchTab('search')" class="w-full mt-2 py-2 rounded-lg border border-[#22c55e]/30 text-[#006e2f] font-semibold text-sm hover:bg-[#22c55e]/5">查看完整详情 →</button>
+        <button onclick="switchTab('search');setTimeout(doSearch,300)" class="w-full mt-2 py-2 rounded-lg border border-[#22c55e]/30 text-[#006e2f] font-semibold text-sm hover:bg-[#22c55e]/5">查看完整详情 →</button>
       </div>`);
     }
-  } catch (e) {
-    hideTyping();
-    addBotMsg('抱歉，服务暂时不可用，请先用「魔法搜索」体验省钱路线。');
-  }
+  } catch (e) { hideTyping(); addBotMsg('抱歉，服务暂时不可用，请先用「魔法搜索」体验省钱路线。'); }
 }
 
-init();
+function modeIcon(m) { return ({flight:'✈️',train_hsr:'🚄',train_sleeper:'🛏️',train_seat:'🚃',metro:'🚇',bus:'🚌',walk_border:'🚶',taxi:'🚕'})[m] || '•'; }
+function durTxt(min) { if(min<=0)return '0分'; const h=Math.floor(min/60),m=min%60; return (h?h+'小时':'')+(m?m+'分':''); }
+
+init(); renderCases();
+</script>
+
+<!-- 3D 地球 (Three.js) -->
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('globe-canvas');
+const container = canvas.parentElement;
+let W = container.clientWidth, H = container.clientHeight;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, W/H, 0.1, 1000);
+camera.position.z = 3.2;
+
+const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// 地球
+const loader = new THREE.TextureLoader();
+loader.crossOrigin = 'anonymous';
+const earthGroup = new THREE.Group();
+scene.add(earthGroup);
+
+const sphereGeo = new THREE.SphereGeometry(1, 64, 64);
+const earthMat = new THREE.MeshPhongMaterial({
+  map: loader.load('https://unpkg.com/three-globe@2.31.0/example/img/earth-blue-marble.jpg'),
+  bumpMap: loader.load('https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png'),
+  bumpScale: 0.05,
+  specular: new THREE.Color(0x111111),
+  shininess: 8,
+});
+const earth = new THREE.Mesh(sphereGeo, earthMat);
+earthGroup.add(earth);
+
+// 云层
+const cloudMat = new THREE.MeshPhongMaterial({
+  map: loader.load('https://unpkg.com/three-globe@2.31.0/example/img/earth-water.png'),
+  transparent: true, opacity: 0.25,
+});
+const clouds = new THREE.Mesh(sphereGeo, cloudMat);
+clouds.scale.setScalar(1.01);
+earthGroup.add(clouds);
+
+// 大气光晕
+const atmoGeo = new THREE.SphereGeometry(1.15, 64, 64);
+const atmoMat = new THREE.ShaderMaterial({
+  vertexShader: `varying vec3 vNormal; void main(){ vNormal = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader: `varying vec3 vNormal; void main(){ float intensity = pow(0.65 - dot(vNormal, vec3(0,0,1.0)), 2.0); gl_FragColor = vec4(0.13,0.55,0.37,1.0)*intensity; }`,
+  blending: THREE.AdditiveBlending, side: THREE.BackSide, transparent: true,
+});
+const atmosphere = new THREE.Mesh(atmoGeo, atmoMat);
+earthGroup.add(atmosphere);
+
+// 光照
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+dirLight.position.set(5, 3, 5);
+scene.add(dirLight);
+
+earthGroup.rotation.y = -1.8; // 让中国朝向观察者
+earthGroup.rotation.x = 0.15;
+
+// 交互: 拖拽旋转
+let isDragging = false, prevX = 0, prevY = 0, autoRotate = true;
+let velX = 0, velY = 0;
+canvas.addEventListener('pointerdown', (e) => { isDragging = true; autoRotate = false; prevX = e.clientX; prevY = e.clientY; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', (e) => {
+  if (!isDragging) return;
+  velY = (e.clientX - prevX) * 0.005;
+  velX = (e.clientY - prevY) * 0.005;
+  earthGroup.rotation.y += velY;
+  earthGroup.rotation.x += velX;
+  earthGroup.rotation.x = Math.max(-1.2, Math.min(1.2, earthGroup.rotation.x));
+  prevX = e.clientX; prevY = e.clientY;
+});
+canvas.addEventListener('pointerup', (e) => { isDragging = false; canvas.releasePointerCapture(e.pointerId); });
+canvas.addEventListener('pointerleave', () => { isDragging = false; });
+
+function animate() {
+  requestAnimationFrame(animate);
+  if (autoRotate) { earthGroup.rotation.y += 0.0008; }
+  else {
+    // 惯性
+    earthGroup.rotation.y += velY; earthGroup.rotation.x += velX;
+    velY *= 0.95; velX *= 0.95;
+    earthGroup.rotation.x = Math.max(-1.2, Math.min(1.2, earthGroup.rotation.x));
+  }
+  clouds.rotation.y += 0.0003;
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  W = container.clientWidth; H = container.clientHeight;
+  camera.aspect = W/H; camera.updateProjectionMatrix();
+  renderer.setSize(W, H);
+});
 </script>
 </body>
 </html>

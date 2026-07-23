@@ -571,7 +571,7 @@ const canvas=document.getElementById('globe-canvas'), wrap=document.getElementBy
 let W=wrap.clientWidth, H=wrap.clientHeight;
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(40, W/H, 0.1, 1000);
-camera.position.set(-0.9, 0, 3.0);
+camera.position.set(-2.2, 1.0, 3.3);
 camera.lookAt(0, 0, 0);
 const renderer=new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
 renderer.setSize(W,H); renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
@@ -623,21 +623,25 @@ function drawRoute(wps){
     if(end){ const ring=new THREE.Mesh(new THREE.RingGeometry(0.028,0.04,24), new THREE.MeshBasicMaterial({color:0x4ade80,transparent:true,opacity:0.6,side:THREE.DoubleSide})); ring.position.copy(latLngToVec3(w.lat,w.lng,R+0.015)); ring.lookAt(0,0,0); pathLayer.add(ring); }
   });
   earthGroup.add(pathLayer);
-  focusOn(wps[Math.floor(wps.length/2)]);
+  // 聚焦整条路径的几何中心 (所有航点经纬度均值), 让首尾都在视野内
+  const center = wps.reduce((a,w)=>({lat:a.lat+w.lat,lng:a.lng+w.lng}),{lat:0,lng:0});
+  center.lat/=wps.length; center.lng/=wps.length;
+  focusOn(center);
 }
-let targetQuat=null, focusing=false;
-function focusOn(wp){ autoRotate=false; velX=0; velY=0;
-  const v=latLngToVec3(wp.lat,wp.lng,1).normalize();
-  targetQuat=new THREE.Quaternion().setFromUnitVectors(v, new THREE.Vector3(0,0,1)); focusing=true;
+let targetRotY=null, focusing=false;
+function focusOn(wp){ autoRotate=false; velY=0;
+  // 只绕 Y 轴聚焦: 让该经度转到正面. 目标 y = -(lng)*π/180 + 校准常数(让中国经度朝前)
+  // 校准: 初始 rotation.y=-1.9 时中国(lng~115)朝前 => -1.9 ≈ -(115°)*π/180 + C => C ≈ 0.11
+  targetRotY = -(wp.lng * Math.PI/180) + 0.11;
+  focusing = true;
 }
 // 交互
 let dragging=false, pX=0,pY=0, autoRotate=true, velX=0,velY=0;
 const MINZ=1.7, MAXZ=5;
 canvas.addEventListener('pointerdown',e=>{dragging=true;focusing=false;autoRotate=false;velX=0;velY=0;pX=e.clientX;pY=e.clientY;canvas.setPointerCapture(e.pointerId);});
 canvas.addEventListener('pointermove',e=>{ if(!dragging)return;
-  velY=(e.clientX-pX)*0.005; velX=(e.clientY-pY)*0.005;
+  velY=(e.clientX-pX)*0.005; velX=0;
   earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0),velY);
-  earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0),velX);
   pX=e.clientX;pY=e.clientY;
 });
 canvas.addEventListener('pointerup',e=>{dragging=false;canvas.releasePointerCapture(e.pointerId);});
@@ -646,14 +650,19 @@ canvas.addEventListener('wheel',e=>{e.preventDefault(); camera.position.z=Math.m
 
 function animate(){
   requestAnimationFrame(animate);
-  if(focusing&&targetQuat){
-    earthGroup.quaternion.slerp(targetQuat,0.08);
-    if(earthGroup.quaternion.angleTo(targetQuat)<0.005){focusing=false;velX=0;velY=0;}
-  } else if(autoRotate){ earthGroup.rotation.y+=0.0006; }
-  else if(!dragging && (Math.abs(velX)>0.0001||Math.abs(velY)>0.0001)){
-    earthGroup.rotateOnWorldAxis(new THREE.Vector3(0,1,0),velY);
-    earthGroup.rotateOnWorldAxis(new THREE.Vector3(1,0,0),velX);
-    velY*=0.94; velX*=0.94;
+  if(focusing&&targetRotY!==null){
+    // 只绕 Y 轴平滑插值, 保留固定俯仰角 x=0.3
+    earthGroup.rotation.x = 0.3;
+    let dy = targetRotY - earthGroup.rotation.y;
+    earthGroup.rotation.y += dy * 0.08;
+    if(Math.abs(dy) < 0.005){ focusing=false; velY=0; }
+  } else if(autoRotate){ earthGroup.rotation.x=0.3; earthGroup.rotation.y+=0.0006; }
+  else {
+    earthGroup.rotation.x = 0.3;
+    if(!dragging && Math.abs(velY)>0.0001){
+      earthGroup.rotation.y += velY;
+      velY*=0.94;
+    }
   }
   renderer.render(scene,camera);
 }

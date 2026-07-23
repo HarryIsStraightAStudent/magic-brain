@@ -82,3 +82,59 @@ def chat_json(system: str, user: str, max_tokens: int = 400) -> dict | None:
         except Exception:
             return None
     return None
+
+
+def chat_with_search(system: str, user: str, max_tokens: int = 600) -> tuple[str, list[dict]]:
+    """调用 GLM 并启用 web_search 工具, 联网查询。
+
+    返回 (最终文本回复, 搜索结果摘要列表)。
+    搜索结果含 title/url/content, 供展示数据来源。
+    """
+    if not API_KEY:
+        return ("", [])
+    try:
+        r = httpx.post(
+            f"{BASE_URL}/v1/messages",
+            headers={
+                "x-api-key": API_KEY,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": MODEL,
+                "max_tokens": max_tokens,
+                "temperature": 0.4,
+                "system": system,
+                "messages": [{"role": "user", "content": user}],
+                "tools": [{"type": "web_search_20250305", "name": "web_search"}],
+            },
+            timeout=60,
+        )
+        r.raise_for_status()
+        data = r.json()
+        text_parts = []
+        sources = []
+        for block in data.get("content", []):
+            btype = block.get("type")
+            if btype == "text":
+                text_parts.append(block["text"])
+            elif btype == "tool_result":
+                # 提取搜索结果摘要
+                import json as _json
+                raw = block.get("content", "")
+                try:
+                    results = _json.loads(raw) if isinstance(raw, str) else raw
+                    if isinstance(results, list):
+                        for item in results:
+                            txt_blocks = item.get("text", [])
+                            for tb in txt_blocks:
+                                sources.append({
+                                    "title": tb.get("title", ""),
+                                    "url": tb.get("link", ""),
+                                    "snippet": (tb.get("content") or "")[:200],
+                                })
+                except Exception:
+                    pass
+        return ("\n".join(text_parts).strip(), sources)
+    except Exception as e:
+        return (f"[LLM_ERROR] {e}", [])

@@ -14,7 +14,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
-from .llm import chat, chat_json
+from .llm import chat, chat_json, chat_with_search
 
 
 @dataclass
@@ -25,6 +25,7 @@ class AgentStep:
     status: str          # "thinking" | "done" | "error"
     thought: str         # 思考内容摘要 (展示给用户)
     result: Any = None   # 结构化结果 (内部传递)
+    sources: list = None # 联网搜索的数据来源 (title/url/snippet)
 
 
 @dataclass
@@ -147,43 +148,61 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
     s2.status = "done"
     s2.thought = plan or f"计划: 1.查{res.origin_name}→{res.dest_name}直达基准 2.搜中转省钱方案 3.对比省多少"
 
-    # ===== Agent 3: 工具调用 (搜索引擎) =====
+    # ===== Agent 3: 工具调用 (本地中转搜索 + 联网查直达票价) =====
     s3 = AgentStep(agent="工具调用", icon="🔧", status="thinking",
-                   thought="正在调用路径搜索引擎...")
+                   thought="正在调用路径搜索引擎 + 联网查询实时直达票价...")
     res.steps.append(s3)
 
+    # 3a. 本地引擎搜中转方案
     search_result = search_fn(res.origin_code, res.dest_code)
     paths = search_result.get("paths", [])
     baselines = search_result.get("baselines", [])
     savings = search_result.get("savings", [])
 
-    if not paths:
+    # 3b. 联网查真实直达票价 (GLM web_search)
+    live_text, live_sources = chat_with_search(
+        system=(
+            "你是票价查询助手。联网查询中国两地之间的真实交通票价。"
+            "返回: 直达高铁二等座票价、最便宜机票价、以及任意更便宜的中转走法。"
+            "只给具体数字, 口语简短。"
+        ),
+        user=f"{res.origin_name}到{res.dest_name}的高铁二等座票价和最便宜机票分别是多少钱？有没有更便宜的中转方案？",
+        max_tokens=400,
+    )
+    s3.sources = live_sources
+
+    if not paths and not live_text:
         s3.status = "error"
-        s3.thought = f"搜索完成, 但暂时没有 {res.origin_name}→{res.dest_name} 的中转省钱方案数据。"
+        s3.thought = f"搜索完成, 但暂时没有 {res.origin_name}→{res.dest_name} 的方案数据。"
         s4 = AgentStep(agent="结果解释", icon="💡", status="done",
-                       thought=f"抱歉，暂无 {res.origin_name}→{res.dest_name} 的省钱方案数据，先用上方搜索框试试已支持的城市。")
+                       thought=f"抱歉，暂无 {res.origin_name}→{res.dest_name} 的省钱方案数据。")
         res.steps.append(s4)
         res.reply = s4.thought
         return res
 
-    # 找最省方案
-    cheapest = min(paths, key=lambda p: p["total_price"])
+    # 构建工具调用摘要: 本地结果 + 联网结果
+    local_summary = ""
+    if paths:
+        cheapest = min(paths, key=lambda p: p["total_price"])
+        local_summary = f"本地引擎找到 {len(paths)} 条中转方案, 最优 ¥{int(cheapest['total_price'])}。"
+    live_summary = f"联网查询到实时票价: {live_text[:100]}" if live_text and not live_text.startswith("[LLM_ERROR]") else ""
+    s3.status = "done"
+    s3.thought = (local_summary + " " + live_summary).strip() or "搜索完成。"
+
+    # 找最省方案 (基于本地中转 vs 联网直达)
+    cheapest = min(paths, key=lambda p: p["total_price"]) if paths else None
     best_saving = None
     for sv in savings:
         if sv["savings_price"] > 0:
             if not best_saving or sv["savings_price"] > best_saving["savings_price"]:
                 best_saving = sv
 
-    n_paths = len(paths)
-    s3.status = "done"
-    s3.thought = f"搜索完成: 找到 {n_paths} 条中转方案, {len(baselines)} 条直达基准。最优 ¥{int(cheapest['total_price'])}。"
-
     # ===== Agent 4: 结果解释 =====
     s4 = AgentStep(agent="结果解释", icon="💡", status="thinking",
                    thought="正在组织回复...")
     res.steps.append(s4)
 
-    if best_saving:
+    if cheapest and best_saving:
         first_seg_label = cheapest["segments"][0]["label"].split(" ")[0]
         time_diff = best_saving["time_cost_min"]
         if time_diff < 0:
@@ -192,25 +211,28 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
             h = time_diff // 60
             time_note = f"多花约 {h} 小时" if h > 0 else f"多花 {time_diff} 分钟"
 
+        # 融入联网查到的实时票价信息
+        live_context = f" 联网查询到的实时票价参考: {live_text[:150]}" if live_text and not live_text.startswith("[LLM_ERROR]") else ""
         reply = chat(
             system=(
-                "你是魔法大脑, 一个交通省钱助手。用简短口语化中文(50字内)告诉用户找到了省钱方案。"
-                "自然融入省钱数字, 别像念稿。用第二人称'你'。"
+                "你是魔法大脑, 一个交通省钱助手。用简短口语化中文(60字内)告诉用户找到了省钱方案。"
+                "自然融入省钱数字, 别像念稿。用第二人称'你'。可以提及联网查到的票价作为对比。"
             ),
             user=(
-                f"用户要从{res.origin_name}去{res.dest_name}。已找到方案: {first_seg_label}, "
+                f"用户要从{res.origin_name}去{res.dest_name}。本地方案: {first_seg_label}, "
                 f"总价¥{int(cheapest['total_price'])}, 比{best_saving['benchmark_name']}"
-                f"(¥{int(best_saving['benchmark_price'])})省¥{int(best_saving['savings_price'])}"
-                f"({int(best_saving['savings_ratio']*100)}%), {time_note}。"
-                f"用一句话告诉用户这个好消息。"
+                f"省¥{int(best_saving['savings_price'])}({int(best_saving['savings_ratio']*100)}%), {time_note}。"
+                f"{live_context}"
+                f"用一两句话告诉用户这个省钱方案, 可结合联网票价。"
             ),
-            max_tokens=120,
+            max_tokens=150,
         )
         s4.status = "done"
         s4.thought = reply or (
             f"已找到省钱方案: {first_seg_label} ¥{int(cheapest['total_price'])}, "
             f"比{best_saving['benchmark_name']}省¥{int(best_saving['savings_price'])}。"
         )
+        s4.sources = live_sources
         res.reply = s4.thought
         # 路线卡
         first_seg = cheapest["segments"][0]
@@ -237,6 +259,9 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
 def steps_to_json(res: PipelineResult) -> list[dict]:
     """把 AgentStep 列表转成前端可展示的 JSON。"""
     return [
-        {"agent": s.agent, "icon": s.icon, "status": s.status, "thought": s.thought}
+        {
+            "agent": s.agent, "icon": s.icon, "status": s.status, "thought": s.thought,
+            "sources": s.sources or [],
+        }
         for s in res.steps
     ]

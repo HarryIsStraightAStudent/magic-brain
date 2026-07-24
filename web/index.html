@@ -574,13 +574,58 @@ function openLiveDetail(idx){
   showView('detail');
 }
 
-// 纯联网模式点方案画地球线
+// 中文名->经纬度查询 (联网模式画途径点)
+function geoLookup(name){
+  if(!name) return null;
+  const cc=GEO.city_coords||{};
+  // 精确匹配
+  if(cc[name]) return cc[name];
+  // 去掉常见后缀再试 (站/机场/北/南/东/西/口岸)
+  const stripped=name.replace(/(站|机场|北站|南站|东站|西站|北|南|东|西|口岸)$/,'');
+  if(cc[stripped]) return cc[stripped];
+  // 包含匹配 (如"上海虹桥"含"上海")
+  for(const k in cc){
+    if(name.includes(k)||k.includes(name)) return cc[k];
+  }
+  return null;
+}
+
+// 纯联网模式: 从route.segments提取途径点画路径+标记
 function drawLiveRoute(oCode, dCode){
-  const wkey=Object.keys(GEO.waypoints||{}).find(k=>k.startsWith(oCode+'-'+dCode));
-  let wps=null;
-  if(wkey) wps=GEO.waypoints[wkey].map(w=>({...w}));
-  else if(GEO.cities[oCode]&&GEO.cities[dCode]) wps=[{...GEO.cities[oCode],type:'flight'},{...GEO.cities[dCode],type:'flight'}];
-  if(wps&&window.__drawRoute) window.__drawRoute(wps);
+  if(!lastAgentData||!lastAgentData.route){ // 无 agentData 则起终点直连
+    const wkey=Object.keys(GEO.waypoints||{}).find(k=>k.startsWith(oCode+'-'+dCode));
+    let wps=null;
+    if(wkey) wps=GEO.waypoints[wkey].map(w=>({...w}));
+    else if(GEO.cities[oCode]&&GEO.cities[dCode]) wps=[{...GEO.cities[oCode],type:'flight'},{...GEO.cities[dCode],type:'flight'}];
+    if(wps&&window.__drawRoute) window.__drawRoute(wps);
+    return;
+  }
+  const segs=lastAgentData.route.segments||[];
+  if(!segs.length){
+    // 无分段, 起终点直连
+    const o=geoLookup(lastAgentData.route.dept_name)||GEO.cities[oCode];
+    const d=geoLookup(lastAgentData.route.arr_name)||GEO.cities[dCode];
+    if(o&&d&&window.__drawRoute) window.__drawRoute([{...o,type:'flight'},{...d,type:'flight'}]);
+    return;
+  }
+  // 从segments提取途径点序列 (去重, 保持顺序)
+  const pts=[];
+  const seen=new Set();
+  const addPt=(name,type)=>{
+    const c=geoLookup(name);
+    if(c&&!seen.has(name)){ seen.add(name); pts.push({name,lat:c.lat,lng:c.lng,type:type||'train'}); }
+  };
+  segs.forEach(s=>{
+    addPt(s.from, s.mode);
+    addPt(s.to, s.mode);
+  });
+  if(pts.length>=2&&window.__drawRoute) window.__drawRoute(pts);
+  else if(pts.length<2){
+    // 经纬度查不全, 起终点直连
+    const o=geoLookup(lastAgentData.route.dept_name)||GEO.cities[oCode];
+    const d=geoLookup(lastAgentData.route.arr_name)||GEO.cities[dCode];
+    if(o&&d&&window.__drawRoute) window.__drawRoute([{...o,type:'flight'},{...d,type:'flight'}]);
+  }
 }
 
 // 搜索框触发Agent后, 用本地引擎补路线卡 (有数据才显示)

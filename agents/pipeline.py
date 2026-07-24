@@ -155,16 +155,35 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
     baselines = search_result.get("baselines", [])
     savings = search_result.get("savings", [])
 
-    # 3b. 联网查真实直达票价 (GLM web_search)
-    live_text, live_sources = chat_with_search(
-        system=(
-            "你是票价查询助手。联网查询中国两地之间的真实交通票价。"
-            "返回: 直达高铁二等座票价、最便宜机票价、以及任意更便宜的中转走法。"
-            "只给具体数字, 口语简短。"
-        ),
-        user=f"{res.origin_name}到{res.dest_name}的高铁二等座票价和最便宜机票分别是多少钱？有没有更便宜的中转方案？",
-        max_tokens=400,
-    )
+    # 3b. 联网查真实直达票价 (DuckDuckGo干净关键词 + GLM解析)
+    from .llm import web_search as _ws, chat as _chat
+    # 用多个干净关键词搜索, 合并结果
+    queries = [
+        f"{res.origin_name} {res.dest_name} 火车票 票价 12306",
+        f"{res.origin_name} {res.dest_name} 机票 价格 携程",
+        f"{res.origin_name}到{res.dest_name} 高铁 卧铺 票价",
+    ]
+    live_sources = []
+    for q in queries:
+        live_sources.extend(_ws(q, max_results=3))
+    # 去重
+    seen_urls = set()
+    deduped = []
+    for s in live_sources:
+        if s["url"] not in seen_urls:
+            seen_urls.add(s["url"])
+            deduped.append(s)
+    live_sources = deduped[:8]
+    # GLM 解析搜索结果
+    if live_sources:
+        search_context = "\n\n".join(f"【{s['title']}】\n{s['snippet']}" for s in live_sources)
+        live_text = _chat(
+            system="你是票价查询助手。严格只根据提供的联网搜索结果回答。给出搜索结果中提到的具体票价数字。若搜索结果中没有相关票价信息, 必须明确回复'未查到相关票价'。禁止使用自身知识编造票价。",
+            user=f"搜索结果:\n{search_context}\n\n问:{res.origin_name}到{res.dest_name}的各种交通票价? 只用上面的搜索结果回答。",
+            max_tokens=300,
+        )
+    else:
+        live_text = ""
     s3.sources = live_sources
 
     # 3c. 用 GLM 解析 3b 的搜索结果为结构化路线 (不再二次联网搜索)
@@ -178,7 +197,7 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
             "mode必选: flight/train_hsr/train_sleeper/train_seat/metro/bus/walk_border。"
             "price人民币数字, duration_min分钟数字。只输出JSON。"
         ),
-        user=f"{res.origin_name}到{res.dest_name}的联网搜索结果:\n{live_text}\n请解析为含车次的结构化JSON。",
+        user=f"{res.origin_name}到{res.dest_name}的联网搜索结果:\n{live_text}\n请严格基于以上搜索结果解析为含车次的结构化JSON。若搜索结果无票价信息, 返回 {{}}。禁止编造。",
         max_tokens=700,
         temperature=0.3,
     )
@@ -191,11 +210,12 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
     except Exception:
         parsed_prices = None
 
-    if not paths and not live_text:
+    if not paths and (not live_text or "无法" in live_text or "未包含" in live_text or "未找到" in live_text):
+        # 本地无数据 + 联网也未查到真实票价: 诚实告知, 不编造
         s3.status = "error"
-        s3.thought = f"搜索完成, 但暂时没有 {res.origin_name}→{res.dest_name} 的方案数据。"
+        s3.thought = f"已联网搜索, 但未查到 {res.origin_name}→{res.dest_name} 的真实票价信息。请换关键词或在 12306/携程 查询。"
         s4 = AgentStep(agent="结果解释", icon="💡", status="done",
-                       thought=f"抱歉，暂无 {res.origin_name}→{res.dest_name} 的省钱方案数据。")
+                       thought=f"抱歉，联网未找到 {res.origin_name}→{res.dest_name} 的真实票价。建议直接在 12306 或携程查询。")
         res.steps.append(s4)
         res.reply = s4.thought
         return res

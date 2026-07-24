@@ -23,12 +23,12 @@
       "baseline_id": "can-hkg-flight-direct",
       "type": "flight_direct",
       "name": "飞机直达",
-      "total_price": 800,
+      "total_price": 1125,
       "total_duration_min": 150,
       "transfers": 0,
-      "note": "短途航线极少且贵, 待核实",
-      "source": "seed_inferred"
+      "note": "携程实测 2026-07, 短途航线极少且贵",
+      "source": "ctrip_verified_2026-07"
     }
   ],
-  "verified_date": null
+  "verified_date": "2026-07-24"
 }

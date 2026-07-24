@@ -9,12 +9,12 @@
       "baseline_id": "sha-syx-flight-direct",
       "type": "flight_direct",
       "name": "飞机直达",
-      "total_price": 1100,
+      "total_price": 450,
       "total_duration_min": 200,
       "transfers": 0,
-      "note": "旺季上海→三亚机票贵, 待核实",
-      "source": "seed_inferred"
+      "note": "携程实测 2026-07, 最低价",
+      "source": "ctrip_verified_2026-07"
     }
   ],
-  "verified_date": null
+  "verified_date": "2026-07-24"
 }

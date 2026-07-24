@@ -9,11 +9,11 @@
       "baseline_id": "bjs-hkg-flight-direct",
       "type": "flight_direct",
       "name": "飞机直达",
-      "total_price": 950,
+      "total_price": 582,
       "total_duration_min": 210,
       "transfers": 0,
-      "note": "北京首都→香港赤鱲角, 待核实",
-      "source": "seed_inferred"
+      "note": "携程实测 2026-07",
+      "source": "ctrip_verified_2026-07"
     },
     {
       "baseline_id": "bjs-hkg-hsr-direct",
@@ -26,9 +26,9 @@
       "total_price": 1180,
       "total_duration_min": 510,
       "transfers": 0,
-      "note": "G79 直达, 待核实",
-      "source": "seed_inferred"
+      "note": "G79 跨境高铁, 携程未显示价格, 待12306核实",
+      "source": "unverified"
     }
   ],
-  "verified_date": null
+  "verified_date": "2026-07-24"
 }

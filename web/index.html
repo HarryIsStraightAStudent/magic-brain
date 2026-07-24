@@ -514,18 +514,24 @@ async function doSearch(){
 function renderLiveResults(data, oName, dName){
   lastAgentData=data; // 供详情用
   const route=data.route, alts=data.live_alternatives||[];
+  const weight=document.getElementById('weight').value;
   if(!route) return `<div style="padding:14px;font-size:13px;line-height:1.7">${data.reply||'未找到结果'}</div>`;
   let h='';
-  // 省钱横幅
-  if(route.savings>0){
+  // 横幅: 按偏好切换 (省钱优先->省¥, 时间优先->省时间)
+  if(weight==='time'){
+    // 时间优先: 显示最快方案用时
+    h+=`<div class="save-hero"><div class="lbl">⚡ 最快方案</div><div class="amt" style="font-size:30px">${route.duration||'—'}</div><div class="ratio">${oName}→${dName}</div><div class="vs">${route.title}</div></div>`;
+  } else if(route.savings>0){
     h+=`<div class="save-hero"><div class="lbl">🎉 你能省</div><div class="amt">¥${route.savings}</div><div class="ratio">比最贵方案</div><div class="vs">${oName}→${dName}</div></div>`;
   }
-  // 最优方案卡 (点击画线, 详情走openLiveDetail)
-  h+=`<div class="base-title" style="margin-top:4px">推荐省钱方案</div>`;
+  // 最优方案卡
+  const sectionTitle = weight==='time'?'推荐最快方案':'推荐省钱方案';
+  const badge = weight==='time'?'最快':'最省';
+  h+=`<div class="base-title" style="margin-top:4px">${sectionTitle}</div>`;
   h+=`<div class="route rec" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
     <div class="route-top"><div><div class="route-name">⭐ ${route.title}</div><div class="route-price">¥${route.price}</div></div>
     <div class="route-meta"><span class="dur">${route.duration}</span>${route.dept_name}→${route.arr_name}</div></div>
-    <span class="pill pill-green">最省</span>
+    <span class="pill pill-green">${badge}</span>
     <div class="route-hint" onclick="event.stopPropagation();openLiveDetail(0)">查看路线详情 →</div></div>`;
   // 替代方案 (划线对比)
   if(alts.length){
@@ -991,13 +997,26 @@ function makeArc(a,b,segs=40,lift=0){
     pts.push(v.multiplyScalar(R+lift+Math.sin(t*Math.PI)*(ang*0.15+0.01)));}
   return pts;
 }
+// 火车/汽车贴地路径: 纯球面插值, 无抬高, 紧贴地表
+function makeGroundPath(a,b,segs=40){
+  const va=latLngToVec3(a.lat,a.lng,1).normalize(), vb=latLngToVec3(b.lat,b.lng,1).normalize();
+  const pts=[];
+  for(let i=0;i<=segs;i++){
+    const t=i/segs;
+    // 球面线性插值 (slerp 近似: lerp+normalize)
+    const v=new THREE.Vector3().copy(va).lerp(vb,t).normalize();
+    pts.push(v.multiplyScalar(R+0.008)); // 微微抬起避免被地形遮挡
+  }
+  return pts;
+}
 let pathLayer=null;
 function clearRoute(){ if(pathLayer){earthGroup.remove(pathLayer); pathLayer.traverse(o=>{o.geometry?.dispose();o.material?.dispose();}); pathLayer=null;} markers=[]; _labelEls.forEach(o=>o.el.remove()); _labelEls=[]; }
 function drawRoute(wps){
   clearRoute(); pathLayer=new THREE.Group(); markers=[];
   for(let i=0;i<wps.length-1;i++){
     const isFlight=wps[i].type==='flight';
-    const seg=isFlight?makeArc(wps[i],wps[i+1],50,0.18):makeArc(wps[i],wps[i+1],40,0.0);
+    // 飞机: 抬高弧线; 火车/汽车/地铁: 贴地路径
+    const seg=isFlight?makeArc(wps[i],wps[i+1],50,0.18):makeGroundPath(wps[i],wps[i+1],40);
     const g=new THREE.BufferGeometry().setFromPoints(seg);
     pathLayer.add(new THREE.Line(g, new THREE.LineBasicMaterial({color:isFlight?0x38bdf8:0x4ade80, transparent:true, opacity:0.95})));
   }

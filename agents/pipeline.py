@@ -207,20 +207,27 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
                      "软卧": "train_sleeper", "高级软卧": "train_sleeper", "动卧": "train_sleeper",
                      "二等座": "train_hsr", "一等座": "train_hsr", "商务座": "train_hsr"}
                 return m.get(seat_name, "train_seat")
+            def dur_txt(dm):
+                if not dm: return "—"
+                h, mm = divmod(dm, 60)
+                return (f"{h}小时" if h else "") + (f"{mm}分" if mm else "")
+            cheapest_dur = cheapest_t.get("duration_min", 0)
             segs = [{"label": f"{cheapest_t['train']} {cheapest_seat['name']}", "mode": seat_mode(cheapest_seat["name"]),
-                     "price": cheapest_seat["price"], "duration_min": 0, "depart": cheapest_t.get("depart", ""),
+                     "price": cheapest_seat["price"], "duration_min": cheapest_dur, "depart": cheapest_t.get("depart", ""),
                      "from": res.origin_name, "to": res.dest_name}]
             alts = []
             for t in sorted_trains[1:5]:
                 tseat = min(t["seats"], key=lambda s: s["price"])
-                alts.append({"method": f"{t['train']} {tseat['name']}", "price": tseat["price"],
+                tdur = t.get("duration_min", 0)
+                alts.append({"method": f"{t['train']} {tseat['name']}", "price": tseat["price"], "duration_min": tdur,
                              "segments": [{"label": f"{t['train']} {tseat['name']}", "mode": seat_mode(tseat["name"]),
-                                           "price": tseat["price"], "duration_min": 0, "depart": t.get("depart",""),
+                                           "price": tseat["price"], "duration_min": tdur, "depart": t.get("depart",""),
                                            "from": res.origin_name, "to": res.dest_name}]})
             parsed_prices = {
                 "cheapest_method": f"{cheapest_t['train']} {cheapest_seat['name']}",
                 "cheapest_price": cheapest_seat["price"],
-                "cheapest_duration": "详见车次",
+                "cheapest_duration": dur_txt(cheapest_dur),
+                "cheapest_duration_min": cheapest_dur,
                 "segments": segs,
                 "alternatives": alts,
             }
@@ -327,6 +334,7 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
                 "arr": "—", "arr_name": res.dest_name,
                 "price": cheap_price,
                 "duration": parsed_prices.get("cheapest_duration", "—"),
+                "duration_min": parsed_prices.get("cheapest_duration_min", 0),
                 "savings": savings_amt,
                 "origin_code": res.origin_code,
                 "dest_code": res.dest_code,

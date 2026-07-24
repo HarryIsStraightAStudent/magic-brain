@@ -72,6 +72,7 @@ def parse_ctrip_text(text: str) -> list[dict]:
     lines = [l.strip() for l in text.split("\n") if l.strip()]
     train_re = re.compile(r"^([ZTKDGC]\d{1,5})$")
     price_re = re.compile(r"^\d{2,5}(\.\d)?$")
+    duration_re = re.compile(r"^(\d{1,2})时(\d{1,2})分$")
 
     i = 0
     while i < len(lines):
@@ -79,11 +80,15 @@ def parse_ctrip_text(text: str) -> list[dict]:
         m = train_re.match(line)
         if m:
             train_no = m.group(1)
-            # 往前找出发时间
+            # 往前找出发时间和运行时长
             depart = ""
-            for j in range(max(0, i-4), i):
+            duration_min = 0
+            for j in range(max(0, i-5), i):
                 if re.match(r"^\d{1,2}:\d{2}$", lines[j]):
                     depart = lines[j]
+                dm = duration_re.match(lines[j])
+                if dm:
+                    duration_min = int(dm.group(1)) * 60 + int(dm.group(2))
             # 往后找座位和价格
             seats = []
             j = i + 1
@@ -105,7 +110,7 @@ def parse_ctrip_text(text: str) -> list[dict]:
                     break
                 j += 1
             if seats:
-                results.append({"train": train_no, "depart": depart, "seats": seats})
+                results.append({"train": train_no, "depart": depart, "duration_min": duration_min, "seats": seats})
         i += 1
 
     # 去重

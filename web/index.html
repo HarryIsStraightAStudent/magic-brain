@@ -567,34 +567,61 @@ function renderLiveResults(data, oName, dName){
   const weight=document.getElementById('weight').value;
   if(!route) return `<div style="padding:14px;font-size:13px;line-height:1.7">${data.reply||'未找到结果'}</div>`;
   let h='';
-  // 横幅: 按偏好切换 (省钱优先->省¥, 时间优先->省时间)
+  const routeDur = route.duration_min||0;
   if(weight==='time'){
-    // 时间优先: 显示最快方案用时
-    h+=`<div class="save-hero"><div class="lbl">⚡ 最快方案</div><div class="amt" style="font-size:30px">${route.duration||'—'}</div><div class="ratio">${oName}→${dName}</div><div class="vs">${route.title}</div></div>`;
+    // 时间优先: 找最慢方案对比, 显示省多少时间
+    const slowAlt = alts.reduce((a,b)=>(b.duration_min||0)>(a.duration_min||0)?b:a, {duration_min:0});
+    const saveMin = (slowAlt.duration_min||0) - routeDur;
+    const saveT = saveMin>0 ? ((Math.floor(saveMin/60)?Math.floor(saveMin/60)+'小时':'') + (saveMin%60?saveMin%60+'分':'')) : '';
+    if(saveT){
+      h+=`<div class="save-hero"><div class="lbl">⚡ 你能省时间</div><div class="amt">${saveT}</div><div class="ratio">比最慢方案</div><div class="vs">${oName}→${dName}</div></div>`;
+    } else {
+      h+=`<div class="save-hero"><div class="lbl">⚡ 最快方案</div><div class="amt" style="font-size:30px">${route.duration||'—'}</div><div class="ratio">${oName}→${dName}</div></div>`;
+    }
   } else if(route.savings>0){
     h+=`<div class="save-hero"><div class="lbl">🎉 你能省</div><div class="amt">¥${route.savings}</div><div class="ratio">比最贵方案</div><div class="vs">${oName}→${dName}</div></div>`;
   }
-  // 最优方案卡
+  // 最优方案卡 (时间优先: 时间大字票价小; 省钱优先: 反之)
   const sectionTitle = weight==='time'?'推荐最快方案':'推荐省钱方案';
   const badge = weight==='time'?'最快':'最省';
   h+=`<div class="base-title" style="margin-top:4px">${sectionTitle}</div>`;
-  h+=`<div class="route rec" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
-    <div class="route-top"><div><div class="route-name">⭐ ${route.title}</div><div class="route-price">¥${route.price}</div></div>
-    <div class="route-meta"><span class="dur">${route.duration}</span>${route.dept_name}→${route.arr_name}</div></div>
-    <span class="pill pill-green">${badge}</span>
-    <div class="route-hint" onclick="event.stopPropagation();openLiveDetail(0)">查看路线详情 →</div></div>`;
-  // 替代方案: 只显示1个对比(最贵的火车), 其余折叠
+  if(weight==='time'){
+    h+=`<div class="route rec" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
+      <div class="route-top"><div><div class="route-name">⭐ ${route.title}</div><div class="route-price" style="font-size:16px;color:var(--text-dim)">¥${route.price}</div></div>
+      <div class="route-meta"><span class="dur" style="font-size:20px;color:var(--accent);font-weight:700">${route.duration||'—'}</span>${route.dept_name}→${route.arr_name}</div></div>
+      <span class="pill pill-green">${badge}</span>
+      <div class="route-hint" onclick="event.stopPropagation();openLiveDetail(0)">查看路线详情 →</div></div>`;
+  } else {
+    h+=`<div class="route rec" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
+      <div class="route-top"><div><div class="route-name">⭐ ${route.title}</div><div class="route-price">¥${route.price}</div></div>
+      <div class="route-meta"><span class="dur">${route.duration}</span>${route.dept_name}→${route.arr_name}</div></div>
+      <span class="pill pill-green">${badge}</span>
+      <div class="route-hint" onclick="event.stopPropagation();openLiveDetail(0)">查看路线详情 →</div></div>`;
+  }
+  // 替代方案: 只显示1个对比, 其余折叠
   if(alts.length){
-    // 找最贵的1个做划线对比
-    const compareAlt = alts.reduce((a,b)=>(a.price||0)>(b.price||0)?a:b, alts[0]);
+    // 时间优先选最慢的(划时间), 省钱优先选最贵的(划价格)
+    const compareAlt = weight==='time'
+      ? alts.reduce((a,b)=>(b.duration_min||0)>(a.duration_min||0)?b:a, alts[0])
+      : alts.reduce((a,b)=>(a.price||0)>(b.price||0)?a:b, alts[0]);
     const restAlts = alts.filter(a=>a!==compareAlt);
     h+='<div class="base-list"><div class="base-title">方案对比</div>';
-    // 最贵火车 (划线对比)
-    const cp=compareAlt.price||0;
-    h+=`<div class="route" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
-      <div class="route-top"><div><div class="route-name">${compareAlt.method||'火车'}</div><div class="route-price" style="color:var(--text-faint);text-decoration:line-through;text-decoration-color:var(--danger)">¥${cp}</div></div></div>
-      ${compareAlt.segments?'<div class="route-hint" onclick="event.stopPropagation();openLiveDetail('+(alts.indexOf(compareAlt)+1)+')">查看路线详情 →</div>':''}
-    </div>`;
+    if(weight==='time'){
+      // 时间优先: 划掉更慢的时间
+      const cd = compareAlt.duration_min||0;
+      const cdTxt = cd?(Math.floor(cd/60)?Math.floor(cd/60)+'小时':'')+(cd%60?cd%60+'分':''):'—';
+      const cp=compareAlt.price||0;
+      h+=`<div class="route" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
+        <div class="route-top"><div><div class="route-name">${compareAlt.method||'方案'}</div><div style="color:var(--text-faint);text-decoration:line-through;text-decoration-color:var(--danger);font-size:15px;font-weight:700">${cdTxt}</div><div style="font-size:13px;color:var(--text-dim)">¥${cp}</div></div></div>
+        ${compareAlt.segments?'<div class="route-hint" onclick="event.stopPropagation();openLiveDetail('+(alts.indexOf(compareAlt)+1)+')">查看路线详情 →</div>':''}
+      </div>`;
+    } else {
+      const cp=compareAlt.price||0;
+      h+=`<div class="route" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
+        <div class="route-top"><div><div class="route-name">${compareAlt.method||'火车'}</div><div class="route-price" style="color:var(--text-faint);text-decoration:line-through;text-decoration-color:var(--danger)">¥${cp}</div></div></div>
+        ${compareAlt.segments?'<div class="route-hint" onclick="event.stopPropagation();openLiveDetail('+(alts.indexOf(compareAlt)+1)+')">查看路线详情 →</div>':''}
+      </div>`;
+    }
     h+='</div>';
     // 其余车次折叠
     if(restAlts.length){
@@ -662,28 +689,30 @@ function geoLookup(name){
 
 // 纯联网模式: 从route.segments提取途径点画路径+标记
 function drawLiveRoute(oCode, dCode){
-  if(!lastAgentData||!lastAgentData.route){ // 无 agentData 则起终点直连
+  if(!lastAgentData||!lastAgentData.route){
     const wkey=Object.keys(GEO.waypoints||{}).find(k=>k.startsWith(oCode+'-'+dCode));
     let wps=null;
     if(wkey) wps=GEO.waypoints[wkey].map(w=>({...w}));
-    else if(GEO.cities[oCode]&&GEO.cities[dCode]) wps=[{...GEO.cities[oCode],type:'flight'},{...GEO.cities[dCode],type:'flight'}];
+    else if(GEO.cities[oCode]&&GEO.cities[dCode]) wps=[{...GEO.cities[oCode],type:'train'},{...GEO.cities[dCode],type:'train'}];
     if(wps&&window.__drawRoute) window.__drawRoute(wps);
     return;
   }
   const segs=lastAgentData.route.segments||[];
+  // 判断交通方式: 有flight段用flight, 否则train
+  const hasFlight = segs.some(s=>s.mode==='flight');
+  const defaultType = hasFlight ? 'flight' : 'train';
   if(!segs.length){
-    // 无分段, 起终点直连
     const o=geoLookup(lastAgentData.route.dept_name)||GEO.cities[oCode];
     const d=geoLookup(lastAgentData.route.arr_name)||GEO.cities[dCode];
-    if(o&&d&&window.__drawRoute) window.__drawRoute([{...o,type:'flight'},{...d,type:'flight'}]);
+    if(o&&d&&window.__drawRoute) window.__drawRoute([{...o,type:defaultType},{...d,type:defaultType}]);
     return;
   }
-  // 从segments提取途径点序列 (去重, 保持顺序)
+  // 从segments提取途径点 (按mode判断每段是贴地还是弧线)
   const pts=[];
   const seen=new Set();
-  const addPt=(name,type)=>{
+  const addPt=(name,mode)=>{
     const c=geoLookup(name);
-    if(c&&!seen.has(name)){ seen.add(name); pts.push({name,lat:c.lat,lng:c.lng,type:type||'train'}); }
+    if(c&&!seen.has(name)){ seen.add(name); pts.push({name,lat:c.lat,lng:c.lng,type:mode==='flight'?'flight':'train'}); }
   };
   segs.forEach(s=>{
     addPt(s.from, s.mode);
@@ -691,10 +720,9 @@ function drawLiveRoute(oCode, dCode){
   });
   if(pts.length>=2&&window.__drawRoute) window.__drawRoute(pts);
   else if(pts.length<2){
-    // 经纬度查不全, 起终点直连
     const o=geoLookup(lastAgentData.route.dept_name)||GEO.cities[oCode];
     const d=geoLookup(lastAgentData.route.arr_name)||GEO.cities[dCode];
-    if(o&&d&&window.__drawRoute) window.__drawRoute([{...o,type:'flight'},{...d,type:'flight'}]);
+    if(o&&d&&window.__drawRoute) window.__drawRoute([{...o,type:defaultType},{...d,type:defaultType}]);
   }
 }
 

@@ -231,6 +231,7 @@ def agent_run(req: ChatRequest):
         "steps": steps_to_json(res),
         "reply": res.reply,
         "route": res.route,
+        "live_alternatives": res.live_alternatives,
         "origin_code": res.origin_code,
         "dest_code": res.dest_code,
     }

@@ -38,6 +38,7 @@ class PipelineResult:
     dest_name: str = ""
     reply: str = ""          # 最终自然语言回复
     route: dict | None = None  # 路线卡数据 (同 /api/chat 的 route)
+    live_alternatives: list = None  # 联网替代方案 (纯联网模式)
 
 
 # 城市别名 (与 api.py 保持一致)
@@ -166,6 +167,26 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
     )
     s3.sources = live_sources
 
+    # 3c. 解析结构化价格 (供纯联网模式渲染路线卡)
+    live_prices = chat_with_search(
+        system=(
+            "你是票价解析助手。基于联网查询结果, 输出严格JSON: "
+            '{"cheapest_method":"最便宜走法名","cheapest_price":数字,"cheapest_duration":"耗时",'
+            '"alternatives":[{"method":"方法","price":数字}]}。'
+            "price是人民币数字。只输出JSON。"
+        ),
+        user=f"{res.origin_name}到{res.dest_name}的查询结果:\n{live_text}\n请输出结构化价格JSON。",
+        max_tokens=300,
+    )[0]
+    import json as _json
+    parsed_prices = None
+    try:
+        start = live_prices.find("{"); end = live_prices.rfind("}")
+        if start >= 0 and end > start:
+            parsed_prices = _json.loads(live_prices[start:end+1])
+    except Exception:
+        parsed_prices = None
+
     if not paths and not live_text:
         s3.status = "error"
         s3.thought = f"搜索完成, 但暂时没有 {res.origin_name}→{res.dest_name} 的方案数据。"
@@ -244,14 +265,41 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
             "dest_code": res.dest_code,
         }
     else:
-        # 纯联网模式 (本地无该城市对中转数据): 直接用联网查询结果
-        if live_text and not live_text.startswith("[LLM_ERROR]"):
+        # 纯联网模式 (本地无该城市对中转数据): 用联网结构化价格渲染
+        if parsed_prices and parsed_prices.get("cheapest_price"):
+            cheap_price = int(parsed_prices["cheapest_price"])
+            alts = parsed_prices.get("alternatives", [])
+            # 找最贵的方案做"划线对比"基准
+            all_prices = [cheap_price] + [int(a.get("price", 0)) for a in alts if a.get("price")]
+            benchmark_price = max(all_prices) if len(all_prices) > 1 else (int(alts[0].get("price", cheap_price)) if alts else cheap_price)
+            savings_amt = benchmark_price - cheap_price
+            # 生成自然语言回复
+            reply = chat(
+                system="你是魔法大脑省钱助手。简短口语(50字内)告诉用户找到了省钱走法。用第二人称。",
+                user=f"{res.origin_name}→{res.dest_name}, 最省走法:{parsed_prices.get('cheapest_method','')} ¥{cheap_price}, 对比其他方案最高¥{benchmark_price}, 省¥{savings_amt}。说一句话。",
+                max_tokens=100,
+            )
+            s4.status = "done"
+            s4.thought = reply or f"找到{res.origin_name}→{res.dest_name}省钱方案: ¥{cheap_price}, 比最贵方案省¥{savings_amt}。"
+            res.reply = s4.thought
+            res.route = {
+                "title": parsed_prices.get("cheapest_method", f"{res.origin_name}→{res.dest_name}"),
+                "dept": "—", "dept_name": res.origin_name,
+                "arr": "—", "arr_name": res.dest_name,
+                "price": cheap_price,
+                "duration": parsed_prices.get("cheapest_duration", "—"),
+                "savings": savings_amt,
+                "origin_code": res.origin_code,
+                "dest_code": res.dest_code,
+            }
+            # 构造替代方案 (供前端划线显示)
+            res.live_alternatives = alts
+        elif live_text and not live_text.startswith("[LLM_ERROR]"):
             s4.status = "done"
             s4.thought = live_text[:200]
             res.reply = live_text
-            # 尝试构造路线卡 (基于联网信息, 无精确数据则省略)
             res.route = {
-                "title": f"{res.origin_name}→{res.dest_name} 联网推荐",
+                "title": f"{res.origin_name}→{res.dest_name}",
                 "dept": "—", "dept_name": res.origin_name,
                 "arr": "—", "arr_name": res.dest_name,
                 "price": 0, "duration": "详见联网信息",

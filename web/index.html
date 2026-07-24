@@ -269,7 +269,7 @@
   .agent-collapse:hover { background: rgba(56,189,248,0.12); }
   .agent-collapse .ac-chevron { transition: transform .2s; }
   .agent-collapse.open .ac-chevron { transform: rotate(90deg); }
-  .agent-trace { transition: all .3s; overflow: hidden; }
+  .agent-trace { transition: max-height .35s ease, opacity .3s ease, margin .3s, padding .3s; overflow: hidden; max-height: 600px; }
   .agent-trace.collapsed { max-height: 0; opacity: 0; margin: 0; padding: 0; }
 
   /* Agent 思考步骤 */
@@ -505,8 +505,8 @@ async function doSearch(){
       const saveTxt=best?`省¥${Math.round(best.savings_price)}`:'';
       // 简化思考条 (本地秒出, 可展开看详情)
       const traceId='strace-'+Date.now();
-      const stepsHtml=`<div class="agent-collapse" onclick="this.nextElementSibling.classList.toggle('collapsed')"><span class="ac-chevron">▼</span> 🤖 Agent 已完成本地搜索 (点击收起)</div>
-        <div class="agent-trace" id="${traceId}" style="padding:8px 0">
+      const stepsHtml=`<div class="agent-collapse" onclick="(function(b){const t=b.nextElementSibling;b.classList.toggle('open');t.classList.toggle('collapsed');b.querySelector('.ac-chevron').textContent=t.classList.contains('collapsed')?'▶':'▼';b.lastChild.textContent=t.classList.contains('collapsed')?' 🤖 Agent 已完成 (点击展开)':' 🤖 Agent 已完成 (点击收起)';})(this)"><span class="ac-chevron">▶</span> 🤖 Agent 已完成 (点击展开)</div>
+        <div class="agent-trace collapsed" id="${traceId}" style="padding:8px 0">
           <div class="agent-step done"><span class="as-icon">🧠</span><div class="as-body"><div class="as-head"><span class="as-name">意图理解</span><span class="as-status done">完成</span></div><div class="as-thought">${oN} → ${dN}，${prefMap[w]||'省钱'}优先</div></div></div>
           <div class="agent-step done"><span class="as-icon">🔧</span><div class="as-body"><div class="as-head"><span class="as-name">工具调用</span><span class="as-status done">完成</span></div><div class="as-thought">本地引擎找到 ${localData.paths.length} 条方案，最优 ¥${Math.round(cheapest.total_price)} ${saveTxt}</div></div></div>
         </div>`;

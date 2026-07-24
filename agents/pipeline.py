@@ -159,6 +159,7 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
     from .llm import chat as _chat
     from .fare_fetch import fetch_train_fares, fares_to_text
     live_sources = []
+    fares = []
     # 主力: 携程火车票页 (真实车次+票价)
     try:
         fares = fetch_train_fares(res.origin_name, res.dest_name)
@@ -183,29 +184,46 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
             )
     s3.sources = live_sources
 
-    # 3c. 用 GLM 解析 3b 的搜索结果为结构化路线 (不再二次联网搜索)
-    from .llm import chat as _chat
-    live_prices_text = _chat(
-        system=(
-            "你是路线解析助手。基于联网搜索结果, 输出严格JSON: "
-            '{"cheapest_method":"最便宜走法名(含车次)","cheapest_price":数字,"cheapest_duration":"耗时",'
-            '"segments":[{"label":"段名含车次如G89二等座","mode":"flight|train_hsr|train_sleeper|train_seat|metro|bus|walk_border","price":数字,"duration_min":数字,"depart":"班次","from":"出发地","to":"到达地"}],'
-            '"alternatives":[{"method":"方法名含车次","price":数字,"segments":[同上结构]}]}。'
-            "mode必选: flight/train_hsr/train_sleeper/train_seat/metro/bus/walk_border。"
-            "price人民币数字, duration_min分钟数字。只输出JSON。"
-        ),
-        user=f"{res.origin_name}到{res.dest_name}的联网搜索结果:\n{live_text}\n请严格基于以上搜索结果解析为含车次的结构化JSON。若搜索结果无票价信息, 返回 {{}}。禁止编造。",
-        max_tokens=700,
-        temperature=0.3,
-    )
+    # 3c. 直接用 fares 结构化数据构造 (不经GLM二次解析, 更准确)
     import json as _json
     parsed_prices = None
-    try:
-        start = live_prices_text.find("{"); end = live_prices_text.rfind("}")
-        if start >= 0 and end > start:
-            parsed_prices = _json.loads(live_prices_text[start:end+1])
-    except Exception:
-        parsed_prices = None
+    if fares:
+        # 找每个车次最便宜座位
+        def train_min_price(t):
+            return min((s["price"] for s in t["seats"]), default=0)
+        def train_seat(t, want):
+            for s in t["seats"]:
+                if s["name"] == want:
+                    return s["price"]
+            return None
+        # 按最便宜座位价排序
+        sorted_trains = sorted(fares, key=train_min_price)
+        if sorted_trains:
+            cheapest_t = sorted_trains[0]
+            cheapest_seat = min(cheapest_t["seats"], key=lambda s: s["price"])
+            # 座位mode映射
+            def seat_mode(seat_name):
+                m = {"硬座": "train_seat", "无座": "train_seat", "硬卧": "train_sleeper",
+                     "软卧": "train_sleeper", "高级软卧": "train_sleeper", "动卧": "train_sleeper",
+                     "二等座": "train_hsr", "一等座": "train_hsr", "商务座": "train_hsr"}
+                return m.get(seat_name, "train_seat")
+            segs = [{"label": f"{cheapest_t['train']} {cheapest_seat['name']}", "mode": seat_mode(cheapest_seat["name"]),
+                     "price": cheapest_seat["price"], "duration_min": 0, "depart": cheapest_t.get("depart", ""),
+                     "from": res.origin_name, "to": res.dest_name}]
+            alts = []
+            for t in sorted_trains[1:5]:
+                tseat = min(t["seats"], key=lambda s: s["price"])
+                alts.append({"method": f"{t['train']} {tseat['name']}", "price": tseat["price"],
+                             "segments": [{"label": f"{t['train']} {tseat['name']}", "mode": seat_mode(tseat["name"]),
+                                           "price": tseat["price"], "duration_min": 0, "depart": t.get("depart",""),
+                                           "from": res.origin_name, "to": res.dest_name}]})
+            parsed_prices = {
+                "cheapest_method": f"{cheapest_t['train']} {cheapest_seat['name']}",
+                "cheapest_price": cheapest_seat["price"],
+                "cheapest_duration": "详见车次",
+                "segments": segs,
+                "alternatives": alts,
+            }
 
     if not paths and (not live_text or "无法" in live_text or "未包含" in live_text or "未找到" in live_text):
         # 本地无数据 + 联网也未查到真实票价: 诚实告知, 不编造
@@ -288,11 +306,11 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
     else:
         # 纯联网模式 (本地无该城市对中转数据): 用联网结构化价格渲染
         if parsed_prices and parsed_prices.get("cheapest_price"):
-            cheap_price = int(parsed_prices["cheapest_price"])
+            cheap_price = round(parsed_prices["cheapest_price"])
             alts = parsed_prices.get("alternatives", [])
-            # 找最贵的方案做"划线对比"基准
-            all_prices = [cheap_price] + [int(a.get("price", 0)) for a in alts if a.get("price")]
-            benchmark_price = max(all_prices) if len(all_prices) > 1 else (int(alts[0].get("price", cheap_price)) if alts else cheap_price)
+            # 找最贵的方案做"划线对比"基准 (用round避免int截断)
+            all_prices = [cheap_price] + [round(a.get("price", 0)) for a in alts if a.get("price")]
+            benchmark_price = max(all_prices) if len(all_prices) > 1 else cheap_price
             savings_amt = benchmark_price - cheap_price
             # 生成自然语言回复
             reply = chat(

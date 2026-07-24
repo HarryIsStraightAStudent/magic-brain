@@ -167,23 +167,24 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
     )
     s3.sources = live_sources
 
-    # 3c. 解析结构化价格 (供纯联网模式渲染路线卡)
-    live_prices = chat_with_search(
+    # 3c. 联网查结构化路线 (含车次/分段, 供纯联网模式渲染路线卡 + 详情)
+    live_prices_text, _ = chat_with_search(
         system=(
-            "你是票价解析助手。基于联网查询结果, 输出严格JSON: "
+            "你是路线查询助手。联网查询后输出严格JSON: "
             '{"cheapest_method":"最便宜走法名","cheapest_price":数字,"cheapest_duration":"耗时",'
-            '"alternatives":[{"method":"方法","price":数字}]}。'
-            "price是人民币数字。只输出JSON。"
+            '"segments":[{"label":"段名含车次如G89二等座","mode":"flight|train_hsr|train_sleeper|train_seat|metro|bus|walk_border","price":数字,"duration_min":数字,"depart":"班次","from":"出发地","to":"到达地"}],'
+            '"alternatives":[{"method":"方法含车次","price":数字,"segments":[同上]}]}。'
+            "mode必选: flight/train_hsr/train_sleeper/train_seat/metro/bus/walk_border。只输出JSON。"
         ),
-        user=f"{res.origin_name}到{res.dest_name}的查询结果:\n{live_text}\n请输出结构化价格JSON。",
-        max_tokens=300,
-    )[0]
+        user=f"联网查询 {res.origin_name}到{res.dest_name} 的真实交通方案(含车次、每段票价耗时), 输出含segments的结构化JSON。",
+        max_tokens=700,
+    )
     import json as _json
     parsed_prices = None
     try:
-        start = live_prices.find("{"); end = live_prices.rfind("}")
+        start = live_prices_text.find("{"); end = live_prices_text.rfind("}")
         if start >= 0 and end > start:
-            parsed_prices = _json.loads(live_prices[start:end+1])
+            parsed_prices = _json.loads(live_prices_text[start:end+1])
     except Exception:
         parsed_prices = None
 
@@ -291,8 +292,9 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
                 "savings": savings_amt,
                 "origin_code": res.origin_code,
                 "dest_code": res.dest_code,
+                "segments": parsed_prices.get("segments", []),
             }
-            # 构造替代方案 (供前端划线显示)
+            # 构造替代方案 (供前端划线显示 + 详情)
             res.live_alternatives = alts
         elif live_text and not live_text.startswith("[LLM_ERROR]"):
             s4.status = "done"

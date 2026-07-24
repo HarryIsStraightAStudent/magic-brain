@@ -448,7 +448,7 @@
 </div>
 
 <script>
-let CITIES={}, PAIRS=[], GEO={cities:{},waypoints:{}}, lastData=null;
+let CITIES={}, PAIRS=[], GEO={cities:{},waypoints:{}}, lastData=null, lastAgentData=null;
 
 async function init(){
   const r = await fetch('/api/cities'); const d = await r.json();
@@ -512,6 +512,7 @@ async function doSearch(){
 
 // 渲染纯联网结果 (省钱横幅 + 多方案 + 划线对比)
 function renderLiveResults(data, oName, dName){
+  lastAgentData=data; // 供详情用
   const route=data.route, alts=data.live_alternatives||[];
   if(!route) return `<div style="padding:14px;font-size:13px;line-height:1.7">${data.reply||'未找到结果'}</div>`;
   let h='';
@@ -519,26 +520,58 @@ function renderLiveResults(data, oName, dName){
   if(route.savings>0){
     h+=`<div class="save-hero"><div class="lbl">🎉 你能省</div><div class="amt">¥${route.savings}</div><div class="ratio">比最贵方案</div><div class="vs">${oName}→${dName}</div></div>`;
   }
-  // 最优方案卡 (点击画线, 不进详情)
+  // 最优方案卡 (点击画线, 详情走openLiveDetail)
   h+=`<div class="base-title" style="margin-top:4px">推荐省钱方案</div>`;
   h+=`<div class="route rec" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
     <div class="route-top"><div><div class="route-name">⭐ ${route.title}</div><div class="route-price">¥${route.price}</div></div>
     <div class="route-meta"><span class="dur">${route.duration}</span>${route.dept_name}→${route.arr_name}</div></div>
     <span class="pill pill-green">最省</span>
-    <div class="route-hint">查看路线详情 →</div></div>`;
+    <div class="route-hint" onclick="event.stopPropagation();openLiveDetail(0)">查看路线详情 →</div></div>`;
   // 替代方案 (划线对比)
   if(alts.length){
     h+='<div class="base-list"><div class="base-title">其他方案对比</div>';
-    alts.forEach(a=>{
+    alts.forEach((a,i)=>{
       const p=a.price||0;
       const isExpensive=p>route.price;
       h+=`<div class="route" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
         <div class="route-top"><div><div class="route-name">${a.method||'方案'}</div><div class="route-price" style="color:var(--text-faint);${isExpensive?'text-decoration:line-through;text-decoration-color:var(--danger);':''}">¥${p}</div></div></div>
+        ${a.segments?'<div class="route-hint" onclick="event.stopPropagation();openLiveDetail('+(i+1)+')">查看路线详情 →</div>':''}
       </div>`;
     });
     h+='</div>';
   }
   return h;
+}
+
+// 纯联网模式详情 (用 route.segments 或 alternative.segments 渲染时间轴)
+function openLiveDetail(idx){
+  if(!lastAgentData||!lastAgentData.route) return;
+  const route=lastAgentData.route;
+  let title=route.title, price=route.price, segs=route.segments||[];
+  if(idx>0){
+    const alt=lastAgentData.live_alternatives[idx-1];
+    if(alt){ title=alt.method||'方案'; price=alt.price; segs=alt.segments||[]; }
+  }
+  let tl='';
+  if(segs.length){
+    segs.forEach((s,i)=>{
+      const last=i===segs.length-1;
+      tl+=`<div class="tl-item"><div class="tl-rail"><div class="tl-dot"></div>${last?'':'<div class="tl-line"></div>'}</div>
+        <div class="tl-body"><div class="tl-title">${modeIcon(s.mode)} ${s.label||s.from+'→'+s.to}</div>
+        <div class="tl-sub">${s.from||''} → ${s.to||''}${s.depart?' · ⏰ '+s.depart:''}</div>
+        <div class="tl-price">¥${s.price||0} · ${durTxt(s.duration_min||0)}</div></div></div>`;
+    });
+  } else {
+    tl=`<div class="tl-item"><div class="tl-rail"><div class="tl-dot"></div></div><div class="tl-body"><div class="tl-title">${title}</div><div class="tl-sub">${route.dept_name} → ${route.arr_name}</div><div class="tl-price">¥${price}</div></div></div>`;
+  }
+  document.getElementById('detail-inner').innerHTML=`
+    <button class="back-btn" onclick="showView('home')">← 返回</button>
+    <h1>${route.dept_name} → ${route.arr_name}</h1>
+    <p>${title} · <b style="color:var(--accent)">¥${price}</b>${route.savings>0?` · <b style="color:var(--save)">省¥${route.savings}</b>`:''}</p>
+    ${route.savings>0?`<div class="save-hero"><div class="lbl">联网查询实时价格</div><div class="amt">¥${price}</div><div class="ratio">省¥${route.savings}</div></div>`:''}
+    <h2>📍 路线时间轴</h2><div class="timeline">${tl}</div>
+    <p style="font-size:11px;color:var(--text-faint);margin-top:16px">⚠️ 以上为联网查询参考价格, 实际请以购票平台为准</p>`;
+  showView('detail');
 }
 
 // 纯联网模式点方案画地球线

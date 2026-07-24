@@ -990,11 +990,16 @@ function renderLabels(){
     o.el.style.left=x+'px'; o.el.style.top=y+'px';
   });
 }
-function makeArc(a,b,segs=40,lift=0){
+function makeArc(a,b,segs=50,lift=0.2){
   const va=latLngToVec3(a.lat,a.lng,1).normalize(), vb=latLngToVec3(b.lat,b.lng,1).normalize();
   const ang=va.angleTo(vb), pts=[];
-  for(let i=0;i<=segs;i++){const t=i/segs; const v=new THREE.Vector3().copy(va).lerp(vb,t).normalize();
-    pts.push(v.multiplyScalar(R+lift+Math.sin(t*Math.PI)*(ang*0.15+0.01)));}
+  for(let i=0;i<=segs;i++){
+    const t=i/segs;
+    const v=new THREE.Vector3().copy(va).lerp(vb,t).normalize();
+    // 起终点贴地(R+0.008), 中间抬高大圆弧 (sin: t=0和1时为0)
+    const elev = R + 0.008 + Math.sin(t*Math.PI) * (lift + ang*0.05);
+    pts.push(v.multiplyScalar(elev));
+  }
   return pts;
 }
 // 火车/汽车贴地路径: 纯球面插值, 无抬高, 紧贴地表
@@ -1016,7 +1021,7 @@ function drawRoute(wps){
   for(let i=0;i<wps.length-1;i++){
     const isFlight=wps[i].type==='flight';
     // 飞机: 抬高弧线; 火车/汽车/地铁: 贴地路径
-    const seg=isFlight?makeArc(wps[i],wps[i+1],50,0.18):makeGroundPath(wps[i],wps[i+1],40);
+    const seg=isFlight?makeArc(wps[i],wps[i+1]):makeGroundPath(wps[i],wps[i+1],40);
     const g=new THREE.BufferGeometry().setFromPoints(seg);
     pathLayer.add(new THREE.Line(g, new THREE.LineBasicMaterial({color:isFlight?0x38bdf8:0x4ade80, transparent:true, opacity:0.95})));
   }

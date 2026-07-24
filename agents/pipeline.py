@@ -102,17 +102,12 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
             res.origin_code, res.dest_code = o_code, d_code
             res.origin_name, res.dest_name = o_name, d_name
         else:
-            # LLM 给的城市名不在表, 用规则兜底
-            if len(rule_cities) >= 2:
-                s1.status = "done"
-                s1.thought = f"识别到: {_CITY_NAMES[rule_cities[0]]} → {_CITY_NAMES[rule_cities[1]]}"
-                res.origin_code, res.dest_code = rule_cities[0], rule_cities[1]
-                res.origin_name = _CITY_NAMES[rule_cities[0]]
-                res.dest_name = _CITY_NAMES[rule_cities[1]]
-            else:
-                s1.status = "error"
-                s1.thought = "没能识别出完整的出发地和目的地，请明确告知，例如「从上海去香港」。"
-                return res
+            # 城市名不在本地别名表, 但仍继续 (纯联网模式, 不依赖本地数据)
+            s1.status = "done"
+            s1.thought = f"识别到: {o_name} → {d_name}，{pref}优先。将联网查询真实票价。"
+            res.origin_code = o_code or o_name
+            res.dest_code = d_code or d_name
+            res.origin_name, res.dest_name = o_name, d_name
     else:
         # LLM 失败, 规则兜底
         if len(rule_cities) >= 2:
@@ -249,9 +244,25 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
             "dest_code": res.dest_code,
         }
     else:
-        s4.status = "done"
-        s4.thought = f"{res.origin_name}→{res.dest_name} 暂无更便宜的中转方案, 建议直接走直达。"
-        res.reply = s4.thought
+        # 纯联网模式 (本地无该城市对中转数据): 直接用联网查询结果
+        if live_text and not live_text.startswith("[LLM_ERROR]"):
+            s4.status = "done"
+            s4.thought = live_text[:200]
+            res.reply = live_text
+            # 尝试构造路线卡 (基于联网信息, 无精确数据则省略)
+            res.route = {
+                "title": f"{res.origin_name}→{res.dest_name} 联网推荐",
+                "dept": "—", "dept_name": res.origin_name,
+                "arr": "—", "arr_name": res.dest_name,
+                "price": 0, "duration": "详见联网信息",
+                "savings": 0,
+                "origin_code": res.origin_code,
+                "dest_code": res.dest_code,
+            }
+        else:
+            s4.status = "done"
+            s4.thought = f"{res.origin_name}→{res.dest_name} 暂时查询不到省钱方案, 建议直接走直达。"
+            res.reply = s4.thought
 
     return res
 

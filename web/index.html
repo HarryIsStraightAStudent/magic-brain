@@ -470,15 +470,72 @@ function switchTab(n){
 
 async function doSearch(){
   const o=document.getElementById('origin').value, d=document.getElementById('destination').value, w=document.getElementById('weight').value;
+  const oName=CITIES[o]?.name||o, dName=CITIES[d]?.name||d;
+  const prefMap={price:'省钱',time:'省时间',balanced:'均衡'};
   const box=document.getElementById('results-box'), body=document.getElementById('results-body'), btn=document.getElementById('btnSearch');
-  box.classList.add('show'); body.innerHTML='<div class="spin"></div>'; btn.disabled=true;
+  box.classList.add('show'); body.innerHTML='<div class="agent-trace" style="padding:8px 0"><div class="agent-step thinking"><span class="as-icon">🔧</span><div class="as-body"><div class="as-head"><span class="as-name">Agent</span><span class="as-status thinking">联网搜索中</span></div><div class="as-thought">正在联网查询 '+oName+'→'+dName+' 的真实票价...</div></div></div></div>'; btn.disabled=true;
   try {
-    const r=await fetch(`/api/search?origin=${o}&destination=${d}&weight=${w}`); const data=await r.json();
+    // 走完整 Agent 流 (联网), 构造自然语言查询
+    const query=`从${oName}到${dName}，${prefMap[w]||'省钱'}优先`;
+    const r=await fetch('/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:query})});
+    const data=await r.json();
     if(data.error){ body.innerHTML=`<p style="color:var(--danger);font-size:13px;padding:20px 0">${data.error}</p>`; return; }
-    lastData=data; renderResults(data);
-    const wps=buildWaypoints(data,0); if(wps&&window.__drawRoute) window.__drawRoute(wps);
+    // 显示 Agent 思考步骤
+    let stepsHtml='<div class="agent-trace" style="padding:8px 0 12px">';
+    (data.steps||[]).forEach(s=>{
+      stepsHtml+=`<div class="agent-step ${s.status}"><span class="as-icon">${s.icon}</span><div class="as-body"><div class="as-head"><span class="as-name">${s.agent}</span><span class="as-status ${s.status}">${s.status==='done'?'完成':s.status}</span></div><div class="as-thought">${s.thought}</div></div></div>`;
+    });
+    stepsHtml+='</div>';
+    // 若有本地中转数据, 渲染路线卡; 否则显示 Agent 的联网回复
+    if(data.origin_code && data.dest_code){
+      // 尝试调本地 search 补路线卡 (有数据则显示, 无数据则纯靠联网回复)
+      await fillResultsFromSearch(data.origin_code, data.dest_code, w, stepsHtml, data);
+    } else {
+      body.innerHTML=stepsHtml+`<div style="padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;font-size:13px;line-height:1.6">${data.reply||'未找到结果'}</div>`;
+    }
   } catch(e){ body.innerHTML='<p style="color:var(--danger);font-size:13px;padding:20px 0">服务出错，请确认后端已启动</p>'; }
   finally{ btn.disabled=false; }
+}
+
+// 搜索框触发Agent后, 用本地引擎补路线卡 (有数据才显示)
+async function fillResultsFromSearch(oCode, dCode, weight, stepsHtml, agentData){
+  const body=document.getElementById('results-body');
+  try{
+    const r=await fetch(`/api/search?origin=${oCode}&destination=${dCode}&weight=${weight}`);
+    const data=await r.json();
+    if(!data.error && data.paths && data.paths.length){
+      lastData=data; renderResults(data);
+      // 在结果顶部插入 Agent 思考步骤
+      body.insertAdjacentHTML('afterbegin', stepsHtml);
+      const wps=buildWaypoints(data,0); if(wps&&window.__drawRoute) window.__drawRoute(wps);
+    } else {
+      // 本地无该城市对数据, 纯展示 Agent 联网结果
+      body.innerHTML=stepsHtml+`<div style="padding:14px;background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.2);border-radius:10px;font-size:13px;line-height:1.7">${agentData.reply||'联网查询完成'}</div>`+renderAgentRouteCard(agentData);
+      // 地球画线 (用城市经纬度直连)
+      drawAgentRoute(agentData);
+    }
+  }catch(e){
+    body.innerHTML=stepsHtml+`<div style="padding:14px;background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.2);border-radius:10px;font-size:13px;line-height:1.7">${agentData.reply||'联网查询完成'}</div>`+renderAgentRouteCard(agentData);
+    drawAgentRoute(agentData);
+  }
+}
+
+// 渲染 Agent 返回的路线卡 (基于联网结果)
+function renderAgentRouteCard(d){
+  if(!d.route) return '';
+  const x=d.route;
+  return `<div class="route rec" style="margin-top:10px"><div class="route-top"><div><div class="route-name">⭐ ${x.title}</div><div class="route-price">¥${x.price}</div></div><div class="route-meta"><span class="dur">${x.duration}</span>${x.dept_name}→${x.arr_name}</div></div><span class="pill pill-green">省 ¥${x.savings}</span></div>`;
+}
+
+// 用 Agent 返回的城市经纬度画地球线 (任意城市, 不依赖本地数据)
+function drawAgentRoute(d){
+  if(!d.route||!window.__drawRoute) return;
+  const oCode=d.route.origin_code, dCode=d.route.dest_code;
+  const wkey=Object.keys(GEO.waypoints||{}).find(k=>k.startsWith(oCode+'-'+dCode));
+  let wps=null;
+  if(wkey){ wps=GEO.waypoints[wkey].map(w=>({...w})); }
+  else if(GEO.cities[oCode]&&GEO.cities[dCode]){ wps=[{...GEO.cities[oCode]},{...GEO.cities[dCode]}]; }
+  if(wps) window.__drawRoute(wps);
 }
 
 function renderResults(data){

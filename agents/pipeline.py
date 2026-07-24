@@ -157,17 +157,21 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
 
     # 3b. 抓携程真实票价 (Playwright渲染) + ddgs补充
     from .llm import chat as _chat
-    from .fare_fetch import fetch_train_fares, fares_to_text
+    from .fare_fetch import fetch_all_fares, fares_to_text
     live_sources = []
     fares = []
-    # 主力: 携程火车票页 (真实车次+票价)
+    flight_info = None
+    # 一个浏览器实例抓火车+飞机 (避免连续启动冲突)
     try:
-        fares = fetch_train_fares(res.origin_name, res.dest_name)
+        fares, flight_info = fetch_all_fares(res.origin_name, res.dest_name)
         live_text = fares_to_text(res.origin_name, res.dest_name, fares)
         if fares:
             live_sources.append({"title": f"携程火车票 {res.origin_name}→{res.dest_name}",
                                   "url": f"ctrip.com {res.origin_name}→{res.dest_name}",
                                   "snippet": live_text[:200]})
+        if flight_info:
+            live_text += f"\n机票最低价: ¥{flight_info['price']} (来源携程机票)"
+            live_sources.append({"title": flight_info["source"], "url": "ctrip.com flights", "snippet": f"最低¥{flight_info['price']}"})
     except Exception:
         live_text = ""
     # 补充: ddgs 搜机票信息
@@ -223,6 +227,14 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
                              "segments": [{"label": f"{t['train']} {tseat['name']}", "mode": seat_mode(tseat["name"]),
                                            "price": tseat["price"], "duration_min": tdur, "depart": t.get("depart",""),
                                            "from": res.origin_name, "to": res.dest_name}]})
+            # 加入飞机作为对比方案 (飞行约按距离估算时长)
+            if flight_info:
+                # 飞行时长估算: 简单按价格档位 (国内航班2-5小时)
+                est_flight_dur = 240  # 默认4小时
+                alts.insert(0, {"method": "✈️ 飞机直达", "price": flight_info["price"], "duration_min": est_flight_dur,
+                                "segments": [{"label": "飞机直达", "mode": "flight", "price": flight_info["price"],
+                                              "duration_min": est_flight_dur, "depart": "多班次",
+                                              "from": res.origin_name, "to": res.dest_name}]})
             parsed_prices = {
                 "cheapest_method": f"{cheapest_t['train']} {cheapest_seat['name']}",
                 "cheapest_price": cheapest_seat["price"],

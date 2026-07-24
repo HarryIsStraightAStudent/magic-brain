@@ -503,14 +503,13 @@ async function doSearch(){
       const cheapest=localData.paths.reduce((a,b)=>a.total_price<b.total_price?a:b);
       const best=localData.savings.filter(s=>s.savings_price>0).sort((a,b)=>b.savings_price-a.savings_price)[0];
       const saveTxt=best?`省¥${Math.round(best.savings_price)}`:'';
-      // 简化思考条 (本地秒出, 可展开看详情)
+      // 简化思考条 (本地秒出, 默认收起)
       const traceId='strace-'+Date.now();
-      const stepsHtml=`<div class="agent-collapse" onclick="(function(b){const t=b.nextElementSibling;b.classList.toggle('open');t.classList.toggle('collapsed');b.querySelector('.ac-chevron').textContent=t.classList.contains('collapsed')?'▶':'▼';b.lastChild.textContent=t.classList.contains('collapsed')?' 🤖 Agent 已完成 (点击展开)':' 🤖 Agent 已完成 (点击收起)';})(this)"><span class="ac-chevron">▶</span> 🤖 Agent 已完成 (点击展开)</div>
+      const stepsHtml=`<div class="agent-collapse" onclick="toggleAgentTrace('${traceId}',this)"><span class="ac-chevron">▶</span> 🤖 Agent 已完成 (点击展开)</div>
         <div class="agent-trace collapsed" id="${traceId}" style="padding:8px 0">
           <div class="agent-step done"><span class="as-icon">🧠</span><div class="as-body"><div class="as-head"><span class="as-name">意图理解</span><span class="as-status done">完成</span></div><div class="as-thought">${oN} → ${dN}，${prefMap[w]||'省钱'}优先</div></div></div>
           <div class="agent-step done"><span class="as-icon">🔧</span><div class="as-body"><div class="as-head"><span class="as-name">工具调用</span><span class="as-status done">完成</span></div><div class="as-thought">本地引擎找到 ${localData.paths.length} 条方案，最优 ¥${Math.round(cheapest.total_price)} ${saveTxt}</div></div></div>
         </div>`;
-      body.innerHTML=stepsHtml;
       renderResults(localData);
       body.insertAdjacentHTML('afterbegin', stepsHtml);
       const wps=buildWaypoints(localData,0); if(wps&&window.__drawRoute) window.__drawRoute(wps);
@@ -551,14 +550,10 @@ async function doAgentSearch(o, d, w, oName, dName, prefMap, body, btn){
     const collapseBar=document.createElement('div');
     collapseBar.className='agent-collapse';
     collapseBar.innerHTML='<span class="ac-chevron">▶</span> 🤖 Agent 思考过程 (已完成，点击展开)';
-    collapseBar.onclick=()=>{
-      traceEl.classList.toggle('collapsed');
-      collapseBar.classList.toggle('open');
-      const chev=collapseBar.querySelector('.ac-chevron');
-      chev.textContent=traceEl.classList.contains('collapsed')?'▶':'▼';
-    };
+    collapseBar.setAttribute('onclick', `toggleAgentTrace('${traceId}',this)`);
     traceEl.parentNode.insertBefore(collapseBar, traceEl);
-    setTimeout(()=>{ traceEl.classList.add('collapsed'); }, 500);
+    // 短暂展示后收起 (让用户看到完成状态)
+    setTimeout(()=>{ traceEl.classList.add('collapsed'); }, 800);
   }
   const stepsHtml=body.innerHTML;
   body.innerHTML=stepsHtml+renderLiveResults(data, oName, dName);
@@ -588,18 +583,32 @@ function renderLiveResults(data, oName, dName){
     <div class="route-meta"><span class="dur">${route.duration}</span>${route.dept_name}→${route.arr_name}</div></div>
     <span class="pill pill-green">${badge}</span>
     <div class="route-hint" onclick="event.stopPropagation();openLiveDetail(0)">查看路线详情 →</div></div>`;
-  // 替代方案 (划线对比)
+  // 替代方案: 只显示1个对比(最贵的火车), 其余折叠
   if(alts.length){
-    h+='<div class="base-list"><div class="base-title">其他方案对比</div>';
-    alts.forEach((a,i)=>{
-      const p=a.price||0;
-      const isExpensive=p>route.price;
-      h+=`<div class="route" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
-        <div class="route-top"><div><div class="route-name">${a.method||'方案'}</div><div class="route-price" style="color:var(--text-faint);${isExpensive?'text-decoration:line-through;text-decoration-color:var(--danger);':''}">¥${p}</div></div></div>
-        ${a.segments?'<div class="route-hint" onclick="event.stopPropagation();openLiveDetail('+(i+1)+')">查看路线详情 →</div>':''}
-      </div>`;
-    });
+    // 找最贵的1个做划线对比
+    const compareAlt = alts.reduce((a,b)=>(a.price||0)>(b.price||0)?a:b, alts[0]);
+    const restAlts = alts.filter(a=>a!==compareAlt);
+    h+='<div class="base-list"><div class="base-title">方案对比</div>';
+    // 最贵火车 (划线对比)
+    const cp=compareAlt.price||0;
+    h+=`<div class="route" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
+      <div class="route-top"><div><div class="route-name">${compareAlt.method||'火车'}</div><div class="route-price" style="color:var(--text-faint);text-decoration:line-through;text-decoration-color:var(--danger)">¥${cp}</div></div></div>
+      ${compareAlt.segments?'<div class="route-hint" onclick="event.stopPropagation();openLiveDetail('+(alts.indexOf(compareAlt)+1)+')">查看路线详情 →</div>':''}
+    </div>`;
     h+='</div>';
+    // 其余车次折叠
+    if(restAlts.length){
+      h+=`<div class="agent-collapse" style="margin-top:8px" onclick="this.nextElementSibling.classList.toggle('collapsed')"><span class="ac-chevron">▶</span> 查看其他 ${restAlts.length} 个车次</div>`;
+      h+='<div class="agent-trace collapsed" style="padding:4px 0">';
+      restAlts.forEach(a=>{
+        const ai=alts.indexOf(a);
+        h+=`<div class="route" style="margin-top:6px" onclick="drawLiveRoute('${data.origin_code}','${data.dest_code}')">
+          <div class="route-top"><div><div class="route-name" style="font-size:12px">${a.method||'车次'}</div><div class="route-price" style="font-size:16px;color:var(--text-dim)">¥${a.price||0}</div></div></div>
+          ${a.segments?'<div class="route-hint" style="font-size:11px" onclick="event.stopPropagation();openLiveDetail('+(ai+1)+')">详情 →</div>':''}
+        </div>`;
+      });
+      h+='</div>';
+    }
   }
   return h;
 }
@@ -937,6 +946,19 @@ async function syncSearchFromAgent(oCode, dCode){
     // 地球画线
     const wps=buildWaypoints(data,0); if(wps&&window.__drawRoute) window.__drawRoute(wps);
   }catch(e){ body.innerHTML='<p style="color:var(--danger);font-size:13px;padding:20px 0">加载失败</p>'; }
+}
+
+// Agent 思考折叠/展开
+function toggleAgentTrace(traceId, bar){
+  const t=document.getElementById(traceId);
+  if(!t) return;
+  t.classList.toggle('collapsed');
+  bar.classList.toggle('open');
+  const chev=bar.querySelector('.ac-chevron');
+  const collapsed=t.classList.contains('collapsed');
+  chev.textContent=collapsed?'▶':'▼';
+  // 更新文字 (保留 chevron span, 改后面的文本节点)
+  bar.lastChild.textContent=collapsed?' 🤖 Agent 思考过程 (点击展开)':' 🤖 Agent 思考过程 (点击收起)';
 }
 
 function buildWaypoints(data,idx){

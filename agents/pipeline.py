@@ -167,17 +167,20 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
     )
     s3.sources = live_sources
 
-    # 3c. 联网查结构化路线 (含车次/分段, 供纯联网模式渲染路线卡 + 详情)
-    live_prices_text, _ = chat_with_search(
+    # 3c. 用 GLM 解析 3b 的搜索结果为结构化路线 (不再二次联网搜索)
+    from .llm import chat as _chat
+    live_prices_text = _chat(
         system=(
-            "你是路线查询助手。联网查询后输出严格JSON: "
-            '{"cheapest_method":"最便宜走法名","cheapest_price":数字,"cheapest_duration":"耗时",'
+            "你是路线解析助手。基于联网搜索结果, 输出严格JSON: "
+            '{"cheapest_method":"最便宜走法名(含车次)","cheapest_price":数字,"cheapest_duration":"耗时",'
             '"segments":[{"label":"段名含车次如G89二等座","mode":"flight|train_hsr|train_sleeper|train_seat|metro|bus|walk_border","price":数字,"duration_min":数字,"depart":"班次","from":"出发地","to":"到达地"}],'
-            '"alternatives":[{"method":"方法含车次","price":数字,"segments":[同上]}]}。'
-            "mode必选: flight/train_hsr/train_sleeper/train_seat/metro/bus/walk_border。只输出JSON。"
+            '"alternatives":[{"method":"方法名含车次","price":数字,"segments":[同上结构]}]}。'
+            "mode必选: flight/train_hsr/train_sleeper/train_seat/metro/bus/walk_border。"
+            "price人民币数字, duration_min分钟数字。只输出JSON。"
         ),
-        user=f"联网查询 {res.origin_name}到{res.dest_name} 的真实交通方案(含车次、每段票价耗时), 输出含segments的结构化JSON。",
+        user=f"{res.origin_name}到{res.dest_name}的联网搜索结果:\n{live_text}\n请解析为含车次的结构化JSON。",
         max_tokens=700,
+        temperature=0.3,
     )
     import json as _json
     parsed_prices = None

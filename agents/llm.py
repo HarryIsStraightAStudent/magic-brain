@@ -84,57 +84,40 @@ def chat_json(system: str, user: str, max_tokens: int = 400) -> dict | None:
     return None
 
 
-def chat_with_search(system: str, user: str, max_tokens: int = 600) -> tuple[str, list[dict]]:
-    """调用 GLM 并启用 web_search 工具, 联网查询。
+def web_search(query: str, max_results: int = 5) -> list[dict]:
+    """用 DuckDuckGo (ddgs) 联网搜索, 免费、无 key、无日限。
 
-    返回 (最终文本回复, 搜索结果摘要列表)。
-    搜索结果含 title/url/content, 供展示数据来源。
+    返回 [{title, url, snippet}]。
     """
-    if not API_KEY:
-        return ("", [])
     try:
-        r = httpx.post(
-            f"{BASE_URL}/v1/messages",
-            headers={
-                "x-api-key": API_KEY,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
-            json={
-                "model": MODEL,
-                "max_tokens": max_tokens,
-                "temperature": 0.4,
-                "system": system,
-                "messages": [{"role": "user", "content": user}],
-                "tools": [{"type": "web_search_20250305", "name": "web_search"}],
-            },
-            timeout=60,
-        )
-        r.raise_for_status()
-        data = r.json()
-        text_parts = []
-        sources = []
-        for block in data.get("content", []):
-            btype = block.get("type")
-            if btype == "text":
-                text_parts.append(block["text"])
-            elif btype == "tool_result":
-                # 提取搜索结果摘要
-                import json as _json
-                raw = block.get("content", "")
-                try:
-                    results = _json.loads(raw) if isinstance(raw, str) else raw
-                    if isinstance(results, list):
-                        for item in results:
-                            txt_blocks = item.get("text", [])
-                            for tb in txt_blocks:
-                                sources.append({
-                                    "title": tb.get("title", ""),
-                                    "url": tb.get("link", ""),
-                                    "snippet": (tb.get("content") or "")[:200],
-                                })
-                except Exception:
-                    pass
-        return ("\n".join(text_parts).strip(), sources)
-    except Exception as e:
-        return (f"[LLM_ERROR] {e}", [])
+        from ddgs import DDGS
+        results = []
+        for r in DDGS().text(query, max_results=max_results):
+            results.append({
+                "title": r.get("title", ""),
+                "url": r.get("href") or r.get("link") or r.get("url", ""),
+                "snippet": (r.get("body") or r.get("content") or "")[:300],
+            })
+        return results
+    except Exception:
+        return []
+
+
+def chat_with_search(system: str, user: str, max_tokens: int = 600) -> tuple[str, list[dict]]:
+    """搜索 + GLM 解析的两步联网 (不耗 GLM web_search 额度)。
+
+    1. 用 user 作为搜索词, DuckDuckGo 搜索
+    2. 把搜索摘要喂给 GLM, 按 system 指示解析
+
+    返回 (GLM 解析文本, 搜索来源列表)。
+    """
+    sources = web_search(user, max_results=5)
+    if not sources:
+        return ("", [])
+    # 拼接搜索摘要
+    search_context = "\n\n".join(
+        f"【来源{i+1}】{s['title']}\n{s['snippet']}" for i, s in enumerate(sources)
+    )
+    prompt = f"基于以下联网搜索结果回答:\n\n{search_context}\n\n{user}"
+    reply = chat(system, prompt, max_tokens=max_tokens, temperature=0.4)
+    return (reply, sources)

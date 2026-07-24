@@ -259,6 +259,19 @@
   }
   .quick:hover { color: var(--accent); border-color: rgba(56,189,248,0.3); }
 
+  /* Agent 思考折叠条 */
+  .agent-collapse {
+    margin: 0 0 10px; padding: 8px 12px; border-radius: 10px;
+    background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.2);
+    cursor: pointer; font-size: 12px; color: var(--accent);
+    display: flex; align-items: center; gap: 6px; transition: all .2s;
+  }
+  .agent-collapse:hover { background: rgba(56,189,248,0.12); }
+  .agent-collapse .ac-chevron { transition: transform .2s; }
+  .agent-collapse.open .ac-chevron { transform: rotate(90deg); }
+  .agent-trace { transition: all .3s; overflow: hidden; }
+  .agent-trace.collapsed { max-height: 0; opacity: 0; margin: 0; padding: 0; }
+
   /* Agent 思考步骤 */
   .agent-trace { display: flex; flex-direction: column; gap: 6px; margin: 4px 0; }
   .agent-step { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; }
@@ -474,7 +487,43 @@ async function doSearch(){
   const prefMap={price:'省钱',time:'省时间',balanced:'均衡'};
   const box=document.getElementById('results-box'), body=document.getElementById('results-body'), btn=document.getElementById('btnSearch');
   box.classList.add('show'); btn.disabled=true;
-  // 先显示 4 步 Agent 占位 (全部思考中)
+  body.innerHTML='<div class="spin"></div>';
+  try {
+    // 策略: 先试本地数据 (秒回), 无数据才走联网 Agent (慢)
+    let localData=null;
+    try{
+      const lr=await fetch(`/api/search?origin=${o}&destination=${d}&weight=${w}`);
+      const ld=await lr.json();
+      if(!ld.error && ld.paths && ld.paths.length) localData=ld;
+    }catch(e){}
+    if(localData){
+      // 本地有数据: 快速渲染 + 显示简化 Agent 思考
+      lastData=localData;
+      const oN=CITIES[o]?.name||o, dN=CITIES[d]?.name||d;
+      const cheapest=localData.paths.reduce((a,b)=>a.total_price<b.total_price?a:b);
+      const best=localData.savings.filter(s=>s.savings_price>0).sort((a,b)=>b.savings_price-a.savings_price)[0];
+      const saveTxt=best?`省¥${Math.round(best.savings_price)}`:'';
+      // 简化思考条 (本地秒出, 可展开看详情)
+      const traceId='strace-'+Date.now();
+      const stepsHtml=`<div class="agent-collapse" onclick="this.nextElementSibling.classList.toggle('collapsed')"><span class="ac-chevron">▼</span> 🤖 Agent 已完成本地搜索 (点击收起)</div>
+        <div class="agent-trace" id="${traceId}" style="padding:8px 0">
+          <div class="agent-step done"><span class="as-icon">🧠</span><div class="as-body"><div class="as-head"><span class="as-name">意图理解</span><span class="as-status done">完成</span></div><div class="as-thought">${oN} → ${dN}，${prefMap[w]||'省钱'}优先</div></div></div>
+          <div class="agent-step done"><span class="as-icon">🔧</span><div class="as-body"><div class="as-head"><span class="as-name">工具调用</span><span class="as-status done">完成</span></div><div class="as-thought">本地引擎找到 ${localData.paths.length} 条方案，最优 ¥${Math.round(cheapest.total_price)} ${saveTxt}</div></div></div>
+        </div>`;
+      body.innerHTML=stepsHtml;
+      renderResults(localData);
+      body.insertAdjacentHTML('afterbegin', stepsHtml);
+      const wps=buildWaypoints(localData,0); if(wps&&window.__drawRoute) window.__drawRoute(wps);
+    } else {
+      // 本地无数据: 走联网 Agent (慢, 但支持任意城市)
+      await doAgentSearch(o, d, w, oName, dName, prefMap, body, btn);
+    }
+  } catch(e){ body.innerHTML='<p style="color:var(--danger);font-size:13px;padding:20px 0">服务出错，请确认后端已启动</p>'; }
+  finally{ btn.disabled=false; }
+}
+
+// 联网 Agent 搜索 (本地无数据时)
+async function doAgentSearch(o, d, w, oName, dName, prefMap, body, btn){
   const traceId='strace-'+Date.now();
   body.innerHTML=`<div class="agent-trace" style="padding:8px 0" id="${traceId}">
     <div class="agent-step thinking" id="${traceId}-0"><span class="as-icon">🧠</span><div class="as-body"><div class="as-head"><span class="as-name">意图理解 Agent</span><span class="as-status thinking">思考中</span></div><div class="as-thought">正在理解你的出行需求...</div></div></div>
@@ -482,32 +531,38 @@ async function doSearch(){
     <div class="agent-step" id="${traceId}-2" style="opacity:.4"><span class="as-icon">🔧</span><div class="as-body"><div class="as-head"><span class="as-name">工具调用 Agent</span><span class="as-status thinking">等待</span></div><div class="as-thought">排队中</div></div></div>
     <div class="agent-step" id="${traceId}-3" style="opacity:.4"><span class="as-icon">💡</span><div class="as-body"><div class="as-head"><span class="as-name">结果解释 Agent</span><span class="as-status thinking">等待</span></div><div class="as-thought">排队中</div></div></div>
   </div>`;
-  try {
-    const query=`从${oName}到${dName}，${prefMap[w]||'省钱'}优先`;
-    const fetchP=fetch('/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:query})}).then(r=>r.json());
-    const data=await fetchP;
-    if(data.error){ body.innerHTML=`<p style="color:var(--danger);font-size:13px;padding:20px 0">${data.error}</p>`; return; }
-    // 逐步揭示 Agent 步骤
-    const steps=data.steps||[];
-    for(let i=0;i<steps.length;i++){
-      await new Promise(res=>setTimeout(res, 700));
-      const el=document.getElementById(`${traceId}-${i}`);
-      if(!el) continue;
-      el.style.opacity='1';
-      el.className='agent-step '+steps[i].status;
-      const sl={thinking:'思考中',done:'完成',error:'出错'}[steps[i].status]||steps[i].status;
-      el.innerHTML=`<span class="as-icon">${steps[i].icon}</span><div class="as-body"><div class="as-head"><span class="as-name">${steps[i].agent} Agent</span><span class="as-status ${steps[i].status}">${sl}</span></div><div class="as-thought">${steps[i].thought}</div></div>`;
-    }
-    await new Promise(res=>setTimeout(res, 300));
-    // 渲染结果: 本地有数据走本地, 否则纯联网
-    const stepsHtml=body.innerHTML; // 保留思考步骤
-    if(data.origin_code && data.dest_code){
-      await fillResultsFromSearch(data.origin_code, data.dest_code, w, stepsHtml, data);
-    } else {
-      body.innerHTML=stepsHtml+renderLiveResults(data, oName, dName);
-    }
-  } catch(e){ body.innerHTML='<p style="color:var(--danger);font-size:13px;padding:20px 0">服务出错，请确认后端已启动</p>'; }
-  finally{ btn.disabled=false; }
+  const query=`从${oName}到${dName}，${prefMap[w]||'省钱'}优先`;
+  const data=await (await fetch('/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:query})})).json();
+  if(data.error){ body.innerHTML=`<p style="color:var(--danger);font-size:13px;padding:20px 0">${data.error}</p>`; return; }
+  const steps=data.steps||[];
+  for(let i=0;i<steps.length;i++){
+    await new Promise(res=>setTimeout(res, 700));
+    const el=document.getElementById(`${traceId}-${i}`);
+    if(!el) continue;
+    el.style.opacity='1';
+    el.className='agent-step '+steps[i].status;
+    const sl={thinking:'思考中',done:'完成',error:'出错'}[steps[i].status]||steps[i].status;
+    el.innerHTML=`<span class="as-icon">${steps[i].icon}</span><div class="as-body"><div class="as-head"><span class="as-name">${steps[i].agent} Agent</span><span class="as-status ${steps[i].status}">${sl}</span></div><div class="as-thought">${steps[i].thought}</div></div>`;
+  }
+  await new Promise(res=>setTimeout(res, 300));
+  // 折叠
+  const traceEl=document.getElementById(traceId);
+  if(traceEl){
+    const collapseBar=document.createElement('div');
+    collapseBar.className='agent-collapse';
+    collapseBar.innerHTML='<span class="ac-chevron">▶</span> 🤖 Agent 思考过程 (已完成，点击展开)';
+    collapseBar.onclick=()=>{
+      traceEl.classList.toggle('collapsed');
+      collapseBar.classList.toggle('open');
+      const chev=collapseBar.querySelector('.ac-chevron');
+      chev.textContent=traceEl.classList.contains('collapsed')?'▶':'▼';
+    };
+    traceEl.parentNode.insertBefore(collapseBar, traceEl);
+    setTimeout(()=>{ traceEl.classList.add('collapsed'); }, 500);
+  }
+  const stepsHtml=body.innerHTML;
+  body.innerHTML=stepsHtml+renderLiveResults(data, oName, dName);
+  drawLiveRoute(data.origin_code, data.dest_code);
 }
 
 // 渲染纯联网结果 (省钱横幅 + 多方案 + 划线对比)

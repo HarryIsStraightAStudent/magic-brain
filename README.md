@@ -1,108 +1,92 @@
 # 魔法大脑 Magic Brain 🧠✈️🚄
 
-> 交通套利搜索引擎 — 输入起终点，自动发现更便宜的中转线路。
+> AI 交通套利搜索引擎 — 4 Agent 协作 + 真实联网票价 + 3D 地球路径可视化
 >
 > GOAI Global Open-source AI Challenge · Track 02 Boundless Agents
 
 ## 故事
 
-从上海去香港。高铁直达 **¥966**，飞机最便宜 ¥696。
-但坐 D941 动卧到深圳（**¥507**），再走罗湖过关 + 港铁到尖沙咀（¥60），全程只要 **¥567** ——
-**比高铁直达省 ¥399 (41%)**，还能在卧铺上睡一觉省一晚酒店。
+从上海去香港，高铁直达 ¥966。但坐动卧到深圳（¥507）再过关到香港（¥60），全程只要 ¥567 —— **省 ¥399（41%）**。
 
-魔法大脑把这种"人肉摸索省钱路线"的能力，做成自动化的 AI 搜索引擎。
+导航 App 只做"最快路径"，OTA 只卖"直达库存"，没人做"多模态中转套利"。魔法大脑把这种"人肉摸索省钱路线"自动化了。
 
-## Demo 截图
+## 核心特性
 
-```
-┌─────────────────────────────────────┐
-│  🎉 你能省                          │
-│     ¥399   (41% ↓)                  │
-│     比高铁直达 西九龙 便宜           │
-├─────────────────────────────────────┤
-│  ⭐ D941 二等卧  ¥567                │
-│     3段 · 2次换乘 · 13小时9分       │
-│     [推荐省钱] [13小时9分]          │
-├─────────────────────────────────────┤
-│  直达基准对比                        │
-│  ✈️ 飞机直达           ¥696         │
-│  🚄 高铁直达 西九龙    ¥966         │
-└─────────────────────────────────────┘
-```
+- 🤖 **4 Agent 协作闭环**：意图理解 → 任务规划 → 工具调用 → 结果解释（GLM-4.7）
+- 🌐 **真实联网票价**：Playwright 渲染携程火车票/机票页，提取真实车次+票价（非编造）
+- 🗺️ **3D 地球路径**：Three.js 真实地球，火车贴地、飞机大圆弧，换乘点标注
+- 💰 **多目标套利**：多目标 Dijkstra 在价格/时间/换乘间优化，省钱/省时间双模式
+- 📍 **任意城市可搜**：本地数据秒回 + 联网抓取兜底，覆盖全国
 
 ## 快速开始
 
 ```bash
-# 1. 克隆
 git clone https://github.com/HarryIsStraightAStudent/magic-brain.git
 cd magic-brain
 
-# 2. 建虚拟环境 + 装依赖
+# 1. 虚拟环境 + 依赖
 python3 -m venv .venv
 source .venv/bin/activate
-pip install fastapi "uvicorn[standard]" pydantic
+pip install -r requirements.txt
+python -m playwright install chromium
 
-# 3a. CLI 体验 (无需额外依赖)
-python3 cli.py 上海 香港
+# 2. 配置 GLM API Key
+cp .env.example .env
+# 编辑 .env 填入 GLM_API_KEY
 
-# 3b. Web 体验
+# 3. 启动
 uvicorn api:app --reload --port 8000
 # 浏览器打开 http://localhost:8000
 ```
 
-## 现状 (W1 · 2026-07-23)
-
-- [x] 多模态交通图模型（飞机/高铁/卧铺/地铁/步行过关）
-- [x] 多目标 Dijkstra 搜索引擎（价格 + 时间 + 换乘 + 舒适度加权）
-- [x] 套利分析模块（vs 直达基准，算省钱额）
-- [x] 真实数据集（上海→香港，来源 12306 实测）+ 4 条种子线路
-- [x] CLI 冒烟测试通过
-- [x] FastAPI 服务 + 旅行温暖风前端（浏览器可点）
-- [x] 回归测试 6 项
-
-## 路线图
-
-- [ ] **W2**: 多 Agent 协作（GLM 意图解析 + 数据采集 + 解释）
-- [ ] **W2**: Stitch 设计稿替换临时前端
-- [ ] **W3**: 扩充数据集至 30 条线路（含已核实数据）
-- [ ] **W3**: 实时增量票价（Agent 上网查询）
-- [ ] **决赛**: 长期开源贡献，社区线路众包
-
-## 项目结构
+## 技术架构
 
 ```
-magic-brain/
-├── engine/              # 核心引擎 (纯标准库)
-│   ├── graph.py         # 多模态交通图
-│   ├── search.py        # 多目标 Dijkstra
-│   ├── arbitrage.py     # 套利分析 (省钱对比)
-│   └── loader.py        # JSON 数据加载
-├── data/
-│   ├── cities.json      # 城市 code 体系
-│   ├── routes/          # 中转省钱路径
-│   ├── baselines/       # 直达基准
-│   └── INDEX.md         # 数据集索引 + 核实状态
-├── web/index.html       # 前端 (旅行温暖风)
-├── cli.py               # 命令行工具
-├── api.py               # FastAPI 服务
-└── tests/test_engine.py # 回归测试
+┌─────────────────────────────────────────┐
+│  前端 (Three.js + Tailwind)              │
+│  3D 地球 · 毛玻璃 UI · Agent 思考可视化   │
+└────────────────┬────────────────────────┘
+                 │ HTTP
+┌────────────────┴────────────────────────┐
+│  FastAPI 服务 (api.py)                   │
+│  /api/agent · /api/search · /api/geo     │
+├─────────────────────────────────────────┤
+│  Agent 层 (agents/)                      │
+│  pipeline.py  4 Agent 流水线             │
+│  llm.py       GLM-4.7 客户端(Anthropic)  │
+│  fare_fetch.py 携程票价抓取(Playwright)  │
+├─────────────────────────────────────────┤
+│  引擎层 (engine/)                        │
+│  graph.py     多模态交通图               │
+│  search.py    多目标 Dijkstra            │
+│  arbitrage.py 套利分析                   │
+│  loader.py    数据加载                   │
+├─────────────────────────────────────────┤
+│  数据层 (data/)                          │
+│  routes/ baselines/  核实线路            │
+│  geo.json  cities + 89城市经纬度         │
+└─────────────────────────────────────────┘
 ```
 
-## 技术栈
+### Agent 闭环
 
-| 层 | 选型 |
-|----|------|
-| 语言 | Python 3.11+ |
-| 引擎 | 纯标准库自写图算法（开源价值） |
-| LLM | GLM-4.5 (智谱，国产开源) |
-| Web | FastAPI + 静态前端 |
-| 数据 | JSON 数据集（前期）→ SQLite（后期） |
+| Agent | 职责 | 实现 |
+|-------|------|------|
+| 🧠 意图理解 | 解析起终点/偏好/约束 | GLM-4.7 |
+| 📋 任务规划 | 拆解搜索步骤 | GLM-4.7 |
+| 🔧 工具调用 | 查真实票价 + 本地搜索 | Playwright 抓携程 + Dijkstra |
+| 💡 结果解释 | 生成自然语言回复 | GLM-4.7 |
 
-## 核心洞察
+## 真实数据来源
 
-普通地图导航（高德/百度/Google）只做"最快路径"。
-OTA（携程/飞猪）只卖"直达库存"。
-**没有人做"多模态中转套利"** —— 这是魔法大脑的位置。
+| 数据 | 来源 | 说明 |
+|------|------|------|
+| 火车票价 | 携程火车票页（Playwright 渲染）| 真实车次+座位价，可追溯 |
+| 机票价格 | 携程机票页 | 最低价参考 |
+| 本地核实线路 | 12306 实测 | 上海→香港等 5 城对 |
+| 城市经纬度 | 公开地理数据 | 89 城市/口岸/枢纽 |
+
+**不编造**：联网未查到时诚实告知，建议去 12306/携程查询。
 
 ## API
 
@@ -110,11 +94,67 @@ OTA（携程/飞猪）只卖"直达库存"。
 |------|------|
 | `GET /` | 前端页面 |
 | `GET /api/health` | 健康检查 |
-| `GET /api/cities` | 可查城市列表 |
-| `GET /api/search?origin=SHA&destination=HKG&weight=price` | 搜索套利路径 |
+| `GET /api/cities` | 可查城市 |
+| `GET /api/geo` | 城市经纬度 |
+| `GET /api/search?origin=SHA&destination=HKG` | 本地搜索 |
+| `POST /api/agent` | 4 Agent 流水线（联网） |
 
-启动后访问 `http://localhost:8000/docs` 查看交互式 API 文档。
+启动后访问 `http://localhost:8000/docs` 看交互式 API 文档。
+
+## 项目结构
+
+```
+magic-brain/
+├── agents/              # 多 Agent 层
+│   ├── pipeline.py      # 4 Agent 流水线
+│   ├── llm.py           # GLM 客户端
+│   └── fare_fetch.py    # 携程票价抓取
+├── engine/              # 核心引擎（纯标准库）
+│   ├── graph.py         # 多模态交通图
+│   ├── search.py        # 多目标 Dijkstra
+│   ├── arbitrage.py     # 套利分析
+│   └── loader.py        # 数据加载
+├── data/                # 数据集
+│   ├── routes/ baselines/
+│   ├── geo.json         # 经纬度+航点
+│   └── INDEX.md         # 数据索引
+├── web/index.html       # 前端（3D 地球 + 毛玻璃）
+├── api.py               # FastAPI 服务
+├── cli.py               # CLI 工具
+├── tests/test_engine.py # 回归测试
+├── docs/                # 初赛材料
+│   ├── INTRO.md         # 作品简介
+│   ├── PITCH_DECK.md    # PPT 内容稿
+│   ├── COMPLIANCE.md    # 合规说明
+│   └── 魔法大脑-方案PPT.pptx
+└── scripts/build_ppt.py # PPT 生成脚本
+```
+
+## 开放 / 复用贡献
+
+| 组件 | 复用价值 |
+|------|---------|
+| 多模态交通图引擎 | 纯标准库，可独立用于任意路径规划 |
+| 4 Agent 流水线 | 意图→规划→工具→解释，可复用于其他工具调用场景 |
+| 携程票价抓取 | Playwright 渲染抓取范式，可适配其他票务站 |
+| 真实交通数据集 | 核实线路 + 89 城市经纬度 |
+
+MIT License · 欢迎贡献
+
+## 运行证据
+
+- CLI：`python3 cli.py 上海 香港` → D941 ¥567 vs G99 ¥966 省 41%
+- 回归测试：`python3 -m unittest tests.test_engine` → 6 项全过
+- 联网抓取：上海→乌鲁木齐 Z40 硬座¥376、飞机¥890（携程实时）
+
+## 安全合规
+
+详见 [docs/COMPLIANCE.md](docs/COMPLIANCE.md)。要点：
+- 定位出行规划辅助，不订票、不替代 OTA
+- 联网结果标注"以购票平台为准"
+- 无账号、无数据存储、无追踪
+- GLM 可迁移（Qwen/DeepSeek），第三方依赖完整披露
 
 ## License
 
-MIT (待定)
+MIT

@@ -16,6 +16,9 @@ httpx>=0.27
 # --- 联网搜索 (免费无日限) ---
 ddgs>=9.0
 
+# --- 真实票价抓取 (Playwright渲染携程) ---
+playwright>=1.40
+
 # --- 数据处理 ---
 # (前期纯 JSON, 后期再上 SQLite/pandas)
 

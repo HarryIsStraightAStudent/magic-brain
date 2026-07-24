@@ -155,35 +155,32 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
     baselines = search_result.get("baselines", [])
     savings = search_result.get("savings", [])
 
-    # 3b. 联网查真实直达票价 (DuckDuckGo干净关键词 + GLM解析)
-    from .llm import web_search as _ws, chat as _chat
-    # 用多个干净关键词搜索, 合并结果
-    queries = [
-        f"{res.origin_name} {res.dest_name} 火车票 票价 12306",
-        f"{res.origin_name} {res.dest_name} 机票 价格 携程",
-        f"{res.origin_name}到{res.dest_name} 高铁 卧铺 票价",
-    ]
+    # 3b. 抓携程真实票价 (Playwright渲染) + ddgs补充
+    from .llm import chat as _chat
+    from .fare_fetch import fetch_train_fares, fares_to_text
     live_sources = []
-    for q in queries:
-        live_sources.extend(_ws(q, max_results=3))
-    # 去重
-    seen_urls = set()
-    deduped = []
-    for s in live_sources:
-        if s["url"] not in seen_urls:
-            seen_urls.add(s["url"])
-            deduped.append(s)
-    live_sources = deduped[:8]
-    # GLM 解析搜索结果
-    if live_sources:
-        search_context = "\n\n".join(f"【{s['title']}】\n{s['snippet']}" for s in live_sources)
-        live_text = _chat(
-            system="你是票价查询助手。严格只根据提供的联网搜索结果回答。给出搜索结果中提到的具体票价数字。若搜索结果中没有相关票价信息, 必须明确回复'未查到相关票价'。禁止使用自身知识编造票价。",
-            user=f"搜索结果:\n{search_context}\n\n问:{res.origin_name}到{res.dest_name}的各种交通票价? 只用上面的搜索结果回答。",
-            max_tokens=300,
-        )
-    else:
+    # 主力: 携程火车票页 (真实车次+票价)
+    try:
+        fares = fetch_train_fares(res.origin_name, res.dest_name)
+        live_text = fares_to_text(res.origin_name, res.dest_name, fares)
+        if fares:
+            live_sources.append({"title": f"携程火车票 {res.origin_name}→{res.dest_name}",
+                                  "url": f"ctrip.com {res.origin_name}→{res.dest_name}",
+                                  "snippet": live_text[:200]})
+    except Exception:
         live_text = ""
+    # 补充: ddgs 搜机票信息
+    if not live_text:
+        from .llm import web_search as _ws
+        for q in [f"{res.origin_name} {res.dest_name} 机票 价格", f"{res.origin_name}到{res.dest_name} 火车 票价"]:
+            live_sources.extend(_ws(q, max_results=3))
+        if live_sources:
+            ctx = "\n".join(f"【{s['title']}】{s['snippet']}" for s in live_sources[:6])
+            live_text = _chat(
+                system="严格只根据搜索结果回答票价。无票价信息则回复'未查到'。禁止编造。",
+                user=f"搜索结果:\n{ctx}\n\n{res.origin_name}到{res.dest_name}票价?",
+                max_tokens=200,
+            )
     s3.sources = live_sources
 
     # 3c. 用 GLM 解析 3b 的搜索结果为结构化路线 (不再二次联网搜索)

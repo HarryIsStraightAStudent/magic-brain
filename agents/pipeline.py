@@ -39,6 +39,7 @@ class PipelineResult:
     reply: str = ""          # 最终自然语言回复
     route: dict | None = None  # 路线卡数据 (同 /api/chat 的 route)
     live_alternatives: list = None  # 联网替代方案 (纯联网模式)
+    preference: str = "省钱"  # 用户偏好 (省钱/时间/舒适)
 
 
 # 城市别名 (与 api.py 保持一致)
@@ -93,6 +94,7 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
         o_name = intent["origin"]
         d_name = intent["destination"]
         pref = intent.get("preference", "省钱")
+        res.preference = pref if pref in ("省钱", "时间", "舒适") else "省钱"
         note = intent.get("note", "")
         # 映射到 code
         o_code = _CITY_ALIASES.get(o_name)
@@ -200,46 +202,52 @@ def run_pipeline(user_message: str, search_fn) -> PipelineResult:
                 if s["name"] == want:
                     return s["price"]
             return None
-        # 按最便宜座位价排序
-        sorted_trains = sorted(fares, key=train_min_price)
-        if sorted_trains:
-            cheapest_t = sorted_trains[0]
-            cheapest_seat = min(cheapest_t["seats"], key=lambda s: s["price"])
-            # 座位mode映射
-            def seat_mode(seat_name):
-                m = {"硬座": "train_seat", "无座": "train_seat", "硬卧": "train_sleeper",
-                     "软卧": "train_sleeper", "高级软卧": "train_sleeper", "动卧": "train_sleeper",
-                     "二等座": "train_hsr", "一等座": "train_hsr", "商务座": "train_hsr"}
-                return m.get(seat_name, "train_seat")
-            def dur_txt(dm):
-                if not dm: return "—"
-                h, mm = divmod(dm, 60)
-                return (f"{h}小时" if h else "") + (f"{mm}分" if mm else "")
-            cheapest_dur = cheapest_t.get("duration_min", 0)
-            segs = [{"label": f"{cheapest_t['train']} {cheapest_seat['name']}", "mode": seat_mode(cheapest_seat["name"]),
-                     "price": cheapest_seat["price"], "duration_min": cheapest_dur, "depart": cheapest_t.get("depart", ""),
+        # 座位mode映射
+        def seat_mode(seat_name):
+            m = {"硬座": "train_seat", "无座": "train_seat", "硬卧": "train_sleeper",
+                 "软卧": "train_sleeper", "高级软卧": "train_sleeper", "动卧": "train_sleeper",
+                 "二等座": "train_hsr", "一等座": "train_hsr", "商务座": "train_hsr"}
+            return m.get(seat_name, "train_seat")
+        def dur_txt(dm):
+            if not dm: return "—"
+            h, mm = divmod(dm, 60)
+            return (f"{h}小时" if h else "") + (f"{mm}分" if mm else "")
+        # 构建统一方案列表 (火车每车次最便宜座位 + 飞机)
+        all_options = []
+        for t in fares:
+            tseat = min(t["seats"], key=lambda s: s["price"])
+            tdur = t.get("duration_min", 0)
+            all_options.append({
+                "method": f"{t['train']} {tseat['name']}", "price": tseat["price"],
+                "duration_min": tdur, "mode": seat_mode(tseat["name"]),
+                "depart": t.get("depart", ""),
+            })
+        if flight_info:
+            all_options.append({
+                "method": "✈️ 飞机直达", "price": flight_info["price"],
+                "duration_min": 240, "mode": "flight", "depart": "多班次",
+            })
+        # 按偏好排序: 时间优先按时长, 省钱优先按价格
+        if res.preference == "时间":
+            all_options.sort(key=lambda x: x["duration_min"] if x["duration_min"] else 99999)
+        else:
+            all_options.sort(key=lambda x: x["price"])
+        if all_options:
+            best = all_options[0]
+            segs = [{"label": best["method"], "mode": best["mode"],
+                     "price": best["price"], "duration_min": best["duration_min"], "depart": best.get("depart",""),
                      "from": res.origin_name, "to": res.dest_name}]
             alts = []
-            for t in sorted_trains[1:5]:
-                tseat = min(t["seats"], key=lambda s: s["price"])
-                tdur = t.get("duration_min", 0)
-                alts.append({"method": f"{t['train']} {tseat['name']}", "price": tseat["price"], "duration_min": tdur,
-                             "segments": [{"label": f"{t['train']} {tseat['name']}", "mode": seat_mode(tseat["name"]),
-                                           "price": tseat["price"], "duration_min": tdur, "depart": t.get("depart",""),
+            for opt in all_options[1:6]:
+                alts.append({"method": opt["method"], "price": opt["price"], "duration_min": opt["duration_min"],
+                             "segments": [{"label": opt["method"], "mode": opt["mode"],
+                                           "price": opt["price"], "duration_min": opt["duration_min"], "depart": opt.get("depart",""),
                                            "from": res.origin_name, "to": res.dest_name}]})
-            # 加入飞机作为对比方案 (飞行约按距离估算时长)
-            if flight_info:
-                # 飞行时长估算: 简单按价格档位 (国内航班2-5小时)
-                est_flight_dur = 240  # 默认4小时
-                alts.insert(0, {"method": "✈️ 飞机直达", "price": flight_info["price"], "duration_min": est_flight_dur,
-                                "segments": [{"label": "飞机直达", "mode": "flight", "price": flight_info["price"],
-                                              "duration_min": est_flight_dur, "depart": "多班次",
-                                              "from": res.origin_name, "to": res.dest_name}]})
             parsed_prices = {
-                "cheapest_method": f"{cheapest_t['train']} {cheapest_seat['name']}",
-                "cheapest_price": cheapest_seat["price"],
-                "cheapest_duration": dur_txt(cheapest_dur),
-                "cheapest_duration_min": cheapest_dur,
+                "cheapest_method": best["method"],
+                "cheapest_price": best["price"],
+                "cheapest_duration": dur_txt(best["duration_min"]),
+                "cheapest_duration_min": best["duration_min"],
                 "segments": segs,
                 "alternatives": alts,
             }
